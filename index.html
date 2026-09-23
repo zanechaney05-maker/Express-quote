@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Express Quote">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#14201a">
+<title>Express Removal | Quote Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light;
+    --paper:#ffffff; --mist:#eef6ec; --sage:#d6ecd0; --grass:#2c8a3e; --grass-bright:#37a94a;
+    --ink:#14201a; --ink-soft:#55635b; --line:#e2ebe0; --amber:#b06a12; --red:#c0392b;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:#f6f9f5;color:var(--ink);font-family:'Hanken Grotesk',system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom);}
+  h1,h2,h3,h4{font-family:'Archivo',sans-serif;margin:0;letter-spacing:-.01em;color:var(--ink);}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 16px;}
+  a{color:var(--grass);}
+
+  header{position:sticky;top:0;z-index:20;background:var(--ink);color:#fff;padding-top:env(safe-area-inset-top);}
+  .hd{display:flex;align-items:center;justify-content:space-between;height:58px;}
+  .hd .brand{display:flex;align-items:center;gap:.55rem;font-family:'Archivo';font-weight:800;font-size:1.15rem;}
+  .hd .brand .sub{color:#9db0a4;font-weight:700;font-size:.7rem;letter-spacing:.2em;}
+  .tabs{display:flex;gap:4px;}
+  .tabs button{font-family:'Archivo';font-weight:700;font-size:.85rem;color:#a7bbae;background:none;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;}
+  .tabs button.on{background:rgba(255,255,255,.1);color:#fff;}
+
+  .layout{display:grid;grid-template-columns:1fr 360px;gap:20px;padding:20px 0 40px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;}
+  .card h3{font-size:1.05rem;margin-bottom:4px;}
+  .card .hint{color:var(--ink-soft);font-size:.86rem;margin-bottom:14px;}
+  .lbl{font-weight:600;font-size:.9rem;margin-bottom:8px;display:block;}
+
+  /* segmented */
+  .seg{display:flex;background:var(--mist);border-radius:10px;padding:4px;margin-bottom:16px;}
+  .seg button{flex:1;font-family:'Archivo';font-weight:700;font-size:.9rem;border:0;background:none;padding:9px;border-radius:7px;color:var(--ink-soft);cursor:pointer;}
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+
+  /* load grid */
+  .loads{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .load{border:2px solid var(--line);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;background:#fff;transition:.12s;}
+  .load:hover{border-color:var(--sage);}
+  .load.on{border-color:var(--grass);background:var(--mist);}
+  .load .bar{height:44px;width:26px;margin:0 auto 8px;border:2px solid var(--ink);border-radius:4px;position:relative;overflow:hidden;background:#fff;}
+  .load .bar i{position:absolute;left:0;right:0;bottom:0;background:var(--grass);}
+  .load .fr{font-family:'Archivo';font-weight:800;font-size:.95rem;}
+  .load .cy{font-size:.68rem;color:var(--ink-soft);}
+  .load .pr{font-size:.78rem;color:var(--grass);font-weight:700;margin-top:3px;}
+
+  /* steppers / items */
+  .row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);}
+  .row:last-child{border-bottom:0;}
+  .row .nm{font-size:.94rem;}
+  .row .nm small{display:block;color:var(--ink-soft);font-size:.76rem;}
+  .step{display:flex;align-items:center;gap:10px;}
+  .step button{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-size:1.2rem;line-height:1;cursor:pointer;color:var(--ink);}
+  .step button:hover{border-color:var(--grass);color:var(--grass);}
+  .step .q{min-width:20px;text-align:center;font-family:'Archivo';font-weight:700;}
+
+  /* toggles */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{border:1.5px solid var(--line);border-radius:999px;padding:7px 13px;font-size:.86rem;cursor:pointer;background:#fff;user-select:none;}
+  .chip.on{border-color:var(--grass);background:var(--mist);color:var(--grass);font-weight:600;}
+
+  input[type=text],input[type=number],select,textarea{width:100%;font-family:inherit;font-size:1rem;padding:.6rem .7rem;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--grass);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .mini{font-size:.78rem;color:var(--ink-soft);margin-top:4px;}
+
+  /* photos */
+  .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:92px;border:2px dashed var(--sage);border-radius:12px;padding:20px 16px;text-align:center;color:var(--ink-soft);cursor:pointer;background:var(--mist);line-height:1.5;}
+  .drop b{color:var(--grass);}
+  .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:12px;}
+  .thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(20,32,26,.8);color:#fff;cursor:pointer;font-size:.8rem;line-height:1;}
+
+  /* crew slider */
+  .crew{display:flex;gap:8px;}
+  .crew button{flex:1;border:2px solid var(--line);border-radius:10px;padding:10px;font-family:'Archivo';font-weight:800;background:#fff;cursor:pointer;}
+  .crew button.on{border-color:var(--grass);background:var(--mist);color:var(--grass);}
+
+  /* quote panel */
+  .quote{position:sticky;top:78px;}
+  .qcard{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+  .qtop{background:var(--grass);color:#fff;padding:20px;}
+  .qtop .cap{font-size:.8rem;opacity:.85;text-transform:uppercase;letter-spacing:.1em;}
+  .qtop .big{font-family:'Archivo';font-weight:800;font-size:2.6rem;line-height:1;margin-top:4px;}
+  .qtop .rng{font-size:.9rem;opacity:.9;margin-top:6px;}
+  .qbody{padding:16px 20px;}
+  .qline{display:flex;justify-content:space-between;font-size:.9rem;padding:5px 0;color:var(--ink-soft);}
+  .qline b{color:var(--ink);}
+  .qbody .tot{border-top:1px solid var(--line);margin-top:8px;padding-top:10px;font-size:1.05rem;}
+  .meta{display:flex;gap:10px;margin-top:12px;}
+  .meta div{flex:1;background:var(--mist);border-radius:10px;padding:10px;text-align:center;}
+  .meta .v{font-family:'Archivo';font-weight:800;font-size:1.1rem;}
+  .meta .k{font-size:.72rem;color:var(--ink-soft);}
+  .ownerbtn{width:100%;margin-top:12px;background:none;border:1px dashed var(--line);color:var(--ink-soft);border-radius:10px;padding:9px;font-family:'Archivo';font-weight:700;font-size:.82rem;cursor:pointer;}
+  .owner{display:none;margin-top:12px;background:var(--ink);color:#dfe7e1;border-radius:12px;padding:14px;font-size:.86rem;}
+  .owner.show{display:block;}
+  .owner .ol{display:flex;justify-content:space-between;padding:3px 0;}
+  .owner .ol b{color:#fff;}
+  .owner .profit{border-top:1px solid rgba(255,255,255,.15);margin-top:6px;padding-top:8px;}
+  .owner .pv{font-family:'Archivo';font-weight:800;font-size:1.3rem;color:var(--grass-bright);}
+  .owner .warn{color:#ffb454;}
+  .btnrow{display:flex;gap:8px;padding:0 20px 20px;}
+  .btn{flex:1;font-family:'Archivo';font-weight:700;border-radius:10px;padding:11px;border:0;cursor:pointer;font-size:.9rem;}
+  .btn-p{background:var(--grass);color:#fff;}
+  .btn-o{background:#fff;border:1.5px solid var(--line);color:var(--ink);}
+
+  .qmode{display:flex;gap:4px;padding:8px;background:#fff;border-bottom:1px solid var(--line);}
+  .qmode button{flex:1;font-family:'Archivo';font-weight:700;font-size:.8rem;border:0;background:var(--mist);color:var(--ink-soft);padding:9px 6px;border-radius:8px;cursor:pointer;}
+  .qmode button.on{background:var(--ink);color:#fff;}
+  .qtop .big.rangefs{font-size:2.05rem;}
+  .noaccept{display:flex;flex-wrap:wrap;gap:8px;}
+  .noaccept span{border:1.5px solid #f1c9c4;background:#fdf1ef;color:#9a2f22;border-radius:999px;padding:6px 12px;font-size:.84rem;font-weight:600;}
+  .howlist{margin:6px 0 0;padding-left:20px;font-size:.92rem;}
+  .howlist li{margin-bottom:6px;}
+  .fillsvg{max-width:420px;margin:10px 0 4px;}
+  /* price sheet */
+  .sheet table{width:100%;border-collapse:collapse;font-size:.9rem;}
+  .sheet th{background:var(--ink);color:#fff;text-align:left;padding:8px 10px;font-family:'Archivo';font-size:.82rem;}
+  .sheet td{padding:7px 10px;border-bottom:1px solid var(--line);}
+  .sheet tr:nth-child(even) td{background:#f8faf7;}
+  .sheet .t-right{text-align:right;}
+  .badge{display:inline-block;background:var(--mist);color:var(--grass);font-weight:700;font-size:.72rem;padding:2px 8px;border-radius:999px;}
+  .hide{display:none;}
+
+  @media (max-width:880px){
+    .layout{grid-template-columns:1fr;}
+    .quote{position:static;}
+    .loads{grid-template-columns:repeat(4,1fr);}
+  }
+  @media (max-width:520px){
+    .loads{grid-template-columns:repeat(4,1fr);gap:6px;}
+    .load{padding:9px 3px;}
+    .load .cy{display:none;}
+    .grid2{grid-template-columns:1fr;}
+  }
+  @media print{
+    header,.tabs,.ownerbtn,.owner,.btnrow,.drop,#view-sheet{display:none!important;}
+    .layout{grid-template-columns:1fr;}
+    body{background:#fff;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hd">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 48 48"><rect x="2" y="2" width="44" height="44" rx="11" fill="#2c8a3e"/><path d="M25 15 L34 24 L25 33" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="10" y="22.3" width="11" height="3.2" rx="1.6" fill="#fff" opacity=".85"/></svg>
+      EXPRESS<span class="sub">&nbsp;REMOVAL</span>
+    </div>
+    <div class="tabs">
+      <button id="tab-calc" class="on" onclick="showView('calc')">Calculator</button>
+      <button id="tab-sheet" onclick="showView('sheet')">Price sheet</button>
+    </div>
+  </div>
+</header>
+
+<!-- ================= CALCULATOR ================= -->
+<div id="view-calc" class="wrap">
+  <div class="layout">
+    <div class="main">
+
+      <div class="card">
+        <h3>Job photos</h3>
+        <p class="hint">Snap the pile or upload photos. They attach to the quote for your records.</p>
+        <label class="drop" for="photoInput">
+          <b>Tap to add photos</b> or take one now<br><span style="font-size:.8rem">JPG / PNG, several at a time</span>
+        </label>
+        <input id="photoInput" type="file" accept="image/*" capture="environment" multiple class="hide">
+        <div id="thumbs" class="thumbs"></div>
+      </div>
+
+      <div class="card">
+        <h3>How much is there?</h3>
+        <p class="hint">Estimate how much of the trailer it fills, or price single items. On site, use the fill lines painted inside the trailer (guide on the Price sheet tab).</p>
+        <div class="seg">
+          <button id="mode-load" class="on" onclick="setMode('load')">By load size</button>
+          <button id="mode-item" onclick="setMode('item')">Single items</button>
+        </div>
+
+        <div id="loadPane">
+          <div class="loads" id="loadGrid"></div>
+        </div>
+
+        <div id="itemPane" class="hide">
+          <p class="hint" style="margin-top:0">Priced individually. A minimum charge applies.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Special handling <span class="badge">extra dump fees</span></h3>
+        <p class="hint">These cost more to dispose of, so they add a surcharge on top of the load size.</p>
+        <div id="specialItems"></div>
+      </div>
+
+      <div class="card">
+        <h3>Access &amp; extras</h3>
+        <div class="grid2" style="margin-bottom:14px">
+          <div>
+            <span class="lbl">Flights of stairs</span>
+            <div class="step"><button onclick="bump('stairs',-1)">&minus;</button><span class="q" id="q-stairs">0</span><button onclick="bump('stairs',1)">+</button></div>
+          </div>
+          <div>
+            <span class="lbl">Items to disassemble</span>
+            <div class="step"><button onclick="bump('disassembly',-1)">&minus;</button><span class="q" id="q-disassembly">0</span><button onclick="bump('disassembly',1)">+</button></div>
+          </div>
+        </div>
+        <div class="chips">
+          <div class="chip" data-flag="longCarry" onclick="toggleFlag(this)">Long carry (50 ft+)</div>
+          <div class="chip" data-flag="sameDay" onclick="toggleFlag(this)">Same-day / after hours</div>
+          <div class="chip" data-flag="storm" onclick="toggleFlag(this)">Storm priority</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Heavy debris <span class="badge">by weight</span></h3>
+        <p class="hint">Concrete, dirt, brick, roofing. Priced by the ton, not by volume.</p>
+        <div class="grid2">
+          <div>
+            <span class="lbl">Material</span>
+            <select id="heavyMat" onchange="calc()">
+              <option value="none">None</option>
+              <option value="debris">Mixed C&amp;D / roofing</option>
+              <option value="concrete">Concrete / brick</option>
+              <option value="dirt">Dirt / soil</option>
+            </select>
+          </div>
+          <div>
+            <span class="lbl">Approx. tons</span>
+            <input id="heavyTons" type="number" min="0" step="0.5" value="0" oninput="calc()">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Crew &amp; your costs</h3>
+        <span class="lbl">Crew members on the job</span>
+        <div class="crew" id="crewSel"></div>
+        <div class="grid2" style="margin-top:14px">
+          <div>
+            <span class="lbl">Labor rate ($/hr each)</span>
+            <input id="laborRate" type="number" value="20" oninput="calc()">
+          </div>
+          <div>
+            <span class="lbl">Fuel / drive ($)</span>
+            <input id="fuel" type="number" value="25" oninput="calc()">
+          </div>
+        </div>
+        <p class="mini">These only affect your cost and margin, not the customer price.</p>
+      </div>
+
+      <div class="card">
+        <h3>Customer &amp; job</h3>
+        <div class="grid2">
+          <div><span class="lbl">Customer name</span><input id="custName" type="text" placeholder="Optional"></div>
+          <div><span class="lbl">Area</span>
+            <select id="area">
+              <option>Wilmington</option><option>Wrightsville Beach</option><option>Carolina Beach</option>
+              <option>Kure Beach</option><option>Leland</option><option>Hampstead</option>
+              <option>Castle Hayne</option><option>Ogden</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>We don't take</h3>
+        <p class="hint">Turn these down politely on the call. Most can go to New Hanover County Household Hazardous Waste.</p>
+        <div class="noaccept">
+          <span>Hot tubs &amp; spas</span><span>Pianos &amp; organs</span><span>Paint &amp; chemicals</span>
+          <span>Gasoline, oil &amp; fuel</span><span>Propane tanks</span><span>Asbestos</span><span>Medical / biohazard waste</span>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+
+    <!-- QUOTE PANEL -->
+    <div class="quote">
+      <div class="qcard">
+        <div class="qmode">
+          <button id="qm-range" class="on" onclick="setQMode('range')">Photo estimate</button>
+          <button id="qm-firm" onclick="setQMode('firm')">On-site firm price</button>
+        </div>
+        <div class="qtop">
+          <div class="cap" id="quoteCap">Estimate from photos</div>
+          <div class="big" id="quotePrice">$95</div>
+          <div class="rng" id="quoteRange">Minimum charge</div>
+        </div>
+        <div class="qbody">
+          <div id="quoteLines"></div>
+          <div class="meta">
+            <div><div class="v" id="mTime">~1.0 hr</div><div class="k">Time on site</div></div>
+            <div><div class="v" id="mCrew">2 crew</div><div class="k">Crew</div></div>
+            <div><div class="v" id="mYd">2-3 yd³</div><div class="k">Volume</div></div>
+          </div>
+          <button class="ownerbtn" onclick="toggleOwner()">Owner view: cost &amp; profit &#9662;</button>
+          <div class="owner" id="ownerView"></div>
+        </div>
+        <div class="btnrow">
+          <button class="btn btn-p" onclick="copyQuote()">Copy quote</button>
+          <button class="btn btn-o" onclick="window.print()">Print / PDF</button>
+        </div>
+        <div class="btnrow" style="margin-top:-8px">
+          <button class="btn btn-o" onclick="resetAll()">Reset</button>
+          <button class="btn btn-o" onclick="saveQuote()">Save</button>
+        </div>
+      </div>
+      <div id="savedWrap" class="card hide" style="margin-top:16px">
+        <h3 style="font-size:.95rem">Saved quotes</h3>
+        <div id="savedList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= PRICE SHEET ================= -->
+<div id="view-sheet" class="wrap hide">
+  <div class="card sheet" style="margin-top:20px">
+    <h2 style="font-size:1.4rem;margin-bottom:4px">Express Removal price sheet</h2>
+    <p class="hint">Wilmington / Cape Fear region. Based on a 7x14 dump trailer with 4 ft sides (about 14.5 yd³ full). Measure your actual trailer and adjust. Priced to beat the franchises and match strong local independents while covering New Hanover landfill costs.</p>
+    <h3 style="margin:18px 0 6px;font-size:1rem">How quoting works</h3>
+    <ol class="howlist">
+      <li><b>Photo estimate:</b> customer texts photos, we give a range (for example, "1/4 to 1/2 load, $195 to $325").</li>
+      <li><b>On-site firm price:</b> we walk the job and give one flat number.</li>
+      <li><b>Approve before loading:</b> nothing gets lifted until the customer says yes.</li>
+      <li><b>Photo proof:</b> snap the loaded trailer against the fill lines for every job.</li>
+    </ol>
+
+    <h3 style="margin:18px 0 6px;font-size:1rem">How we measure a load</h3>
+    <p class="hint" style="margin-bottom:0">Paint or tape lines inside the trailer walls. Where the pile lands is the load size, and the customer can see it too.</p>
+    <svg class="fillsvg" viewBox="0 0 420 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trailer fill lines">
+      <rect x="40" y="20" width="330" height="110" rx="6" fill="#eef6ec" stroke="#14201a" stroke-width="4"/>
+      <rect x="44" y="75" width="322" height="51" fill="#b9e0b1"/>
+      <g stroke="#2c8a3e" stroke-width="3" stroke-dasharray="10 6">
+        <line x1="44" y1="102.5" x2="366" y2="102.5"/><line x1="44" y1="75" x2="366" y2="75"/><line x1="44" y1="47.5" x2="366" y2="47.5"/>
+      </g>
+      <g font-family="Archivo, sans-serif" font-weight="800" font-size="13" fill="#14201a">
+        <text x="376" y="107">1/4</text><text x="376" y="80">1/2</text><text x="376" y="52">3/4</text><text x="376" y="25">Full</text>
+      </g>
+      <text x="205" y="98" text-anchor="middle" font-family="Hanken Grotesk, sans-serif" font-size="12" fill="#1c4a24">this pile = 1/2 load</text>
+      <circle cx="95" cy="148" r="16" fill="#14201a"/><circle cx="135" cy="148" r="16" fill="#14201a"/>
+      <line x1="370" y1="118" x2="412" y2="140" stroke="#14201a" stroke-width="5" stroke-linecap="round"/>
+    </svg>
+    <p class="mini">Loads between lines are priced at the in-between tiers (1/8, 1/3, 5/8, 7/8). Level with the top of the sides = full.</p>
+
+    <h3 style="margin:18px 0 6px;font-size:1rem">Load-size pricing (general household junk)</h3>
+    <table>
+      <tr><th>Load</th><th>Roughly</th><th class="t-right">Price</th></tr>
+      <tbody id="sheetLoads"></tbody>
+    </table>
+    <h3 style="margin:18px 0 6px;font-size:1rem">Single items &amp; special handling</h3>
+    <table>
+      <tr><th>Item</th><th class="t-right">On its own</th><th class="t-right">Surcharge in a load</th></tr>
+      <tbody id="sheetItems"></tbody>
+    </table>
+    <h3 style="margin:18px 0 6px;font-size:1rem">Access &amp; extras</h3>
+    <table>
+      <tr><th>Add-on</th><th class="t-right">Charge</th></tr>
+      <tr><td>Stairs</td><td class="t-right">+$30 per flight</td></tr>
+      <tr><td>Long carry (over 50 ft)</td><td class="t-right">+$35</td></tr>
+      <tr><td>Disassembly</td><td class="t-right">+$40 per item</td></tr>
+      <tr><td>Same-day / after hours</td><td class="t-right">+$50</td></tr>
+      <tr><td>Storm / hurricane priority</td><td class="t-right">+$75</td></tr>
+      <tr><td>Barrier-island beaches</td><td class="t-right">No upcharge, schedule ahead</td></tr>
+    </table>
+    <h3 style="margin:18px 0 6px;font-size:1rem">Heavy debris (by weight)</h3>
+    <table>
+      <tr><th>Material</th><th class="t-right">Per ton</th><th>Notes</th></tr>
+      <tr><td>Mixed C&amp;D / roofing</td><td class="t-right">$175</td><td>NHC dumps at $61/ton</td></tr>
+      <tr><td>Concrete / brick</td><td class="t-right">$110</td><td>NHC $10-30/ton</td></tr>
+      <tr><td>Dirt / soil</td><td class="t-right">$110</td><td>NHC $30/ton</td></tr>
+    </table>
+    <h3 style="margin:18px 0 6px;font-size:1rem">Not accepted</h3>
+    <div class="noaccept">
+      <span>Hot tubs &amp; spas</span><span>Pianos &amp; organs</span><span>Paint &amp; chemicals</span>
+      <span>Gasoline, oil &amp; fuel</span><span>Propane tanks</span><span>Asbestos</span><span>Medical / biohazard waste</span>
+    </div>
+    <p class="mini" style="margin-top:14px">Minimum charge $95. Appliances dump free at the New Hanover landfill (or scrap for cash), so appliance-heavy jobs are high margin. Mattresses carry a $10 county surcharge, Freon appliances need recovery. Keep recyclable-heavy loads sorted to avoid the county's $500 surcharge.</p>
+  </div>
+</div>
+
+<script>
+const P = {
+  minimum: 95,
+  cyFull: 15,
+  loads: [
+    {key:'1/8', cy:'2-3 yd³', price:125, frac:.125, ydMid:2.5},
+    {key:'1/4', cy:'3-5 yd³', price:195, frac:.25, ydMid:4},
+    {key:'1/3', cy:'5-6 yd³', price:245, frac:.33, ydMid:5.5},
+    {key:'1/2', cy:'6-9 yd³', price:325, frac:.5, ydMid:7.5},
+    {key:'5/8', cy:'9-11 yd³', price:400, frac:.625, ydMid:10},
+    {key:'3/4', cy:'11-13 yd³', price:475, frac:.75, ydMid:12},
+    {key:'7/8', cy:'13-15 yd³', price:560, frac:.875, ydMid:13.5},
+    {key:'Full', cy:'14-17 yd³', price:625, frac:1, ydMid:15},
+  ],
+  items: [
+    {key:'sofa', label:'Sofa / couch', sub:'', full:110, sur:0},
+    {key:'sectional', label:'Sectional', full:170, sur:0},
+    {key:'mattress', label:'Mattress / box spring', sub:'$10 county surcharge', full:85, sur:15},
+    {key:'fridge', label:'Fridge / freezer / AC', sub:'Freon recovery', full:95, sur:25},
+    {key:'appliance', label:'Washer / dryer / water heater', full:85, sur:15},
+    {key:'tv', label:'TV / monitor', sub:'e-waste', full:45, sur:20},
+    {key:'tire', label:'Tire', full:20, sur:15},
+    {key:'treadmill', label:'Treadmill / exercise eq.', full:95, sur:35},
+  ],
+  access:{stairs:30, disassembly:40, longCarry:35, sameDay:50, storm:75},
+  heavy:{debris:{price:175,tip:61}, concrete:{price:110,tip:25}, dirt:{price:110,tip:30}},
+  cost:{lbsPerCy:175, tipPerTon:61, overhead:20}
+};
+
+let S = {mode:'load', load:null, items:{}, special:{}, stairs:0, disassembly:0,
+         flags:{longCarry:false,sameDay:false,storm:false}, crew:2, photos:[], qmode:'range'};
+
+// ---------- build UI ----------
+function buildLoads(){
+  document.getElementById('loadGrid').innerHTML = P.loads.map(l=>
+    `<div class="load" data-k="${l.key}" onclick="pickLoad('${l.key}')">
+      <div class="bar"><i style="height:${Math.round(l.frac*100)}%"></i></div>
+      <div class="fr">${l.key}</div><div class="cy">${l.cy}</div><div class="pr">$${l.price}</div>
+    </div>`).join('');
+}
+function itemRow(it, mode){
+  const q = (mode==='item'?S.items:S.special)[it.key]||0;
+  const price = mode==='item'? '$'+it.full : (it.sur>0?'+$'+it.sur:'incl.');
+  return `<div class="row">
+    <div class="nm">${it.label} <span style="color:var(--grass);font-weight:600">${price}</span>${it.sub?`<small>${it.sub}</small>`:''}</div>
+    <div class="step">
+      <button onclick="itemBump('${mode}','${it.key}',-1)">&minus;</button>
+      <span class="q" id="${mode}-${it.key}">${q}</span>
+      <button onclick="itemBump('${mode}','${it.key}',1)">+</button>
+    </div></div>`;
+}
+function buildItems(){
+  document.getElementById('itemPane').innerHTML =
+    '<p class="hint" style="margin-top:0">Priced individually. A minimum charge applies.</p>' +
+    P.items.map(it=>itemRow(it,'item')).join('');
+  document.getElementById('specialItems').innerHTML =
+    P.items.filter(it=>it.sur>0).map(it=>itemRow(it,'special')).join('');
+}
+function buildCrew(){
+  document.getElementById('crewSel').innerHTML = [1,2,3,4].map(n=>
+    `<button class="${n===S.crew?'on':''}" onclick="setCrew(${n})">${n}</button>`).join('');
+}
+function buildSheet(){
+  document.getElementById('sheetLoads').innerHTML = P.loads.map(l=>
+    `<tr><td><b>${l.key} load</b></td><td>${l.cy}</td><td class="t-right"><b>$${l.price}</b></td></tr>`).join('')
+    + `<tr><td><b>Minimum</b></td><td>single small item</td><td class="t-right"><b>$${P.minimum}</b></td></tr>`;
+  document.getElementById('sheetItems').innerHTML = P.items.map(it=>
+    `<tr><td>${it.label}</td><td class="t-right">$${it.full}</td><td class="t-right">${it.sur>0?'+$'+it.sur:'included'}</td></tr>`).join('');
+}
+
+// ---------- interactions ----------
+function setMode(m){S.mode=m;
+  document.getElementById('mode-load').classList.toggle('on',m==='load');
+  document.getElementById('mode-item').classList.toggle('on',m==='item');
+  document.getElementById('loadPane').classList.toggle('hide',m!=='load');
+  document.getElementById('itemPane').classList.toggle('hide',m!=='item');
+  calc();
+}
+function pickLoad(k){S.load = (S.load===k?null:k);
+  document.querySelectorAll('.load').forEach(el=>el.classList.toggle('on',el.dataset.k===S.load));
+  calc();
+}
+function itemBump(mode,key,d){const map=mode==='item'?S.items:S.special;
+  map[key]=Math.max(0,(map[key]||0)+d);document.getElementById(mode+'-'+key).textContent=map[key];calc();}
+function bump(k,d){S[k]=Math.max(0,S[k]+d);document.getElementById('q-'+k).textContent=S[k];calc();}
+function toggleFlag(el){const f=el.dataset.flag;S.flags[f]=!S.flags[f];el.classList.toggle('on',S.flags[f]);calc();}
+function setCrew(n){S.crew=n;buildCrew();calc();}
+function showView(v){
+  document.getElementById('view-calc').classList.toggle('hide',v!=='calc');
+  document.getElementById('view-sheet').classList.toggle('hide',v!=='sheet');
+  document.getElementById('tab-calc').classList.toggle('on',v==='calc');
+  document.getElementById('tab-sheet').classList.toggle('on',v==='sheet');
+  window.scrollTo(0,0);
+}
+function setQMode(m){S.qmode=m;
+  document.getElementById('qm-range').classList.toggle('on',m==='range');
+  document.getElementById('qm-firm').classList.toggle('on',m==='firm');
+  calc();
+}
+function toggleOwner(){document.getElementById('ownerView').classList.toggle('show');}
+
+// ---------- photos ----------
+document.getElementById('photoInput').addEventListener('change',e=>{
+  [...e.target.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{S.photos.push(ev.target.result);renderThumbs();};
+    r.readAsDataURL(f);
+  });
+  e.target.value='';
+});
+function renderThumbs(){
+  document.getElementById('thumbs').innerHTML = S.photos.map((src,i)=>
+    `<div class="thumb"><img src="${src}"><button onclick="rmPhoto(${i})">&times;</button></div>`).join('');
+}
+function rmPhoto(i){S.photos.splice(i,1);renderThumbs();}
+
+// ---------- the math ----------
+function compute(){
+  let price=0, lines=[], yd=0, manHours=1, bump=0;
+  if(S.mode==='load' && S.load){
+    const idx=P.loads.findIndex(x=>x.key===S.load); const l=P.loads[idx]; const nx=P.loads[idx+1];
+    if(nx) bump = nx.price - l.price;
+    price+=l.price; yd=l.ydMid; manHours=1+l.frac*4;
+    lines.push([l.key+' load',l.price]);
+    // special surcharges
+    P.items.forEach(it=>{const q=S.special[it.key]||0; if(q&&it.sur){price+=q*it.sur;manHours+=q*0.12;lines.push([it.label+' x'+q+' (surcharge)',q*it.sur]);}});
+  } else if(S.mode==='item'){
+    let itemTotal=0, any=false;
+    P.items.forEach(it=>{const q=S.items[it.key]||0; if(q){any=true;itemTotal+=q*it.full;manHours+=q*0.25;yd+=q*0.6;lines.push([it.label+' x'+q,q*it.full]);}});
+    price+= any? Math.max(itemTotal,P.minimum) : 0;
+    if(any && itemTotal<P.minimum){lines.push(['Minimum applied',P.minimum-itemTotal]);}
+  }
+  // access
+  if(S.stairs){const a=S.stairs*P.access.stairs;price+=a;manHours+=S.stairs*0.25;lines.push([S.stairs+' flight(s) stairs',a]);}
+  if(S.disassembly){const a=S.disassembly*P.access.disassembly;price+=a;manHours+=S.disassembly*0.5;lines.push([S.disassembly+' disassembly',a]);}
+  if(S.flags.longCarry){price+=P.access.longCarry;manHours+=0.25;lines.push(['Long carry',P.access.longCarry]);}
+  if(S.flags.sameDay){price+=P.access.sameDay;lines.push(['Same-day / after hours',P.access.sameDay]);}
+  if(S.flags.storm){price+=P.access.storm;lines.push(['Storm priority',P.access.storm]);}
+  // heavy
+  const hm=document.getElementById('heavyMat').value, ht=parseFloat(document.getElementById('heavyTons').value)||0;
+  let heavyTons=0, heavyTip=0;
+  if(hm!=='none' && ht>0){const h=P.heavy[hm];let hp=Math.max(h.price*ht,150);price+=hp;heavyTons=ht;heavyTip=h.tip*ht;manHours+=ht*0.6;lines.push(['Heavy: '+hm+' '+ht+'t',hp]);}
+  // enforce minimum overall if a load or items chosen
+  const hasWork = (S.mode==='load'&&S.load) || (S.mode==='item'&&lines.length) || heavyTons>0;
+  if(hasWork && price<P.minimum){price=P.minimum;}
+
+  // ---- owner cost ----
+  const rate=parseFloat(document.getElementById('laborRate').value)||20;
+  const fuel=parseFloat(document.getElementById('fuel').value)||0;
+  const genTons=(yd*P.cost.lbsPerCy)/2000;
+  const disposal=Math.round(genTons*P.cost.tipPerTon + heavyTip);
+  const labor=Math.round(manHours*rate);
+  const cost=disposal+labor+fuel+P.cost.overhead;
+  const profit=Math.round(price-cost);
+  const margin=price>0?Math.round(profit/price*100):0;
+  const timeOnSite=Math.max(0.5, manHours/S.crew);
+
+  return {price:Math.round(price),high:Math.round(price+bump),lines,yd,disposal,labor,fuel,overhead:P.cost.overhead,cost,profit,margin,timeOnSite,hasWork};
+}
+
+function calc(){
+  const r=compute();
+  const isRange = S.qmode==='range' && r.hasWork && r.high>r.price;
+  const bigEl=document.getElementById('quotePrice');
+  bigEl.textContent = !r.hasWork? '$'+P.minimum : (isRange? '$'+r.price+' - $'+r.high : '$'+r.price);
+  bigEl.classList.toggle('rangefs', isRange);
+  document.getElementById('quoteCap').textContent = S.qmode==='range'? 'Estimate from photos' : 'Firm on-site price';
+  document.getElementById('quoteRange').textContent = !r.hasWork? 'Minimum charge'
+    : (S.qmode==='range'? 'Final price set on site before we lift anything' : 'Flat, all-in. Approved before loading.');
+  const totTxt = isRange? '$'+r.price+' - $'+r.high : '$'+r.price;
+  document.getElementById('quoteLines').innerHTML = r.lines.length?
+    r.lines.map(l=>`<div class="qline"><span>${l[0]}</span><b>$${Math.round(l[1])}</b></div>`).join('')
+      + (isRange? `<div class="qline"><span>Range covers up to the next load size</span><b>+$${r.high-r.price}</b></div>` : '')
+      + `<div class="qline tot"><span>${isRange?'Estimate':'Total'}</span><b>${totTxt}</b></div>`
+    : '<div class="qline">Pick a load size or add items to build a quote.</div>';
+  document.getElementById('mTime').textContent = '~'+r.timeOnSite.toFixed(1)+' hr';
+  document.getElementById('mCrew').textContent = S.crew+' crew';
+  document.getElementById('mYd').textContent = r.yd? (Math.round(r.yd*10)/10)+' yd³' : '-';
+  const warn = r.margin<30;
+  document.getElementById('ownerView').innerHTML = `
+    <div class="ol"><span>Disposal (landfill)</span><b>$${r.disposal}</b></div>
+    <div class="ol"><span>Labor (${(r.labor/ (parseFloat(document.getElementById('laborRate').value)||20)).toFixed(1)} man-hrs)</span><b>$${r.labor}</b></div>
+    <div class="ol"><span>Fuel / drive</span><b>$${r.fuel}</b></div>
+    <div class="ol"><span>Overhead</span><b>$${r.overhead}</b></div>
+    <div class="ol"><span>Your cost</span><b>$${r.cost}</b></div>
+    <div class="ol profit"><span>Profit${S.qmode==='range'?' (low end)':''}</span><span class="pv ${warn?'warn':''}">$${r.profit}</span></div>
+    <div class="ol"><span>Margin</span><b class="${warn?'warn':''}">${r.margin}%${warn?'  (thin)':''}</b></div>`;
+}
+
+// ---------- quote text / save ----------
+function quoteText(){
+  const r=compute();
+  const isRange = S.qmode==='range' && r.high>r.price;
+  let t = isRange? 'EXPRESS REMOVAL - Estimate from photos\n' : 'EXPRESS REMOVAL - Quote\n';
+  const nm=document.getElementById('custName').value; if(nm)t+='Customer: '+nm+'\n';
+  t+='Area: '+document.getElementById('area').value+'\n\n';
+  r.lines.forEach(l=>t+='  '+l[0]+': $'+Math.round(l[1])+'\n');
+  t+= isRange? '\nESTIMATE: $'+r.price+' - $'+r.high+'\n' : '\nTOTAL: $'+r.price+'\n';
+  t+='Est. time on site: ~'+r.timeOnSite.toFixed(1)+' hr with '+S.crew+' crew\n';
+  t+= isRange? '\nFinal price confirmed on site before we lift anything. (910) 555-0147'
+             : '\nFlat, all-in price. No surprise fees. (910) 555-0147';
+  return t;
+}
+function copyQuote(){navigator.clipboard.writeText(quoteText()).then(()=>{
+  const b=event.target;const o=b.textContent;b.textContent='Copied!';setTimeout(()=>b.textContent=o,1200);
+});}
+function resetAll(){S={mode:'load',load:null,items:{},special:{},stairs:0,disassembly:0,flags:{longCarry:false,sameDay:false,storm:false},crew:2,photos:[],qmode:S.qmode};
+  document.getElementById('heavyMat').value='none';document.getElementById('heavyTons').value=0;
+  document.getElementById('custName').value='';document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  document.getElementById('q-stairs').textContent=0;document.getElementById('q-disassembly').textContent=0;
+  setMode('load');buildItems();buildCrew();renderThumbs();calc();
+}
+function saveQuote(){
+  const r=compute(); if(!r.hasWork)return;
+  const q={t:Date.now(),name:document.getElementById('custName').value||'(no name)',area:document.getElementById('area').value,price:r.price};
+  try{const arr=JSON.parse(localStorage.getItem('exq')||'[]');arr.unshift(q);localStorage.setItem('exq',JSON.stringify(arr.slice(0,12)));renderSaved();
+    const b=event.target;b.textContent='Saved!';setTimeout(()=>b.textContent='Save',1200);
+  }catch(e){alert('Saved quotes need browser storage, which is off here. Use Copy or Print instead.');}
+}
+function renderSaved(){
+  try{const arr=JSON.parse(localStorage.getItem('exq')||'[]');
+    if(!arr.length)return;
+    document.getElementById('savedWrap').classList.remove('hide');
+    document.getElementById('savedList').innerHTML=arr.map(q=>
+      `<div class="qline"><span>${q.name} - ${q.area}</span><b>$${q.price}</b></div>`).join('');
+  }catch(e){}
+}
+
+// init
+buildLoads();buildItems();buildCrew();buildSheet();renderSaved();calc();
+</script>
+</body>
+</html>
