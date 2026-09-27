@@ -1,156 +1,244 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Express Quote</title>
+<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Express Quote">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#14201a">
-<title>Express Removal | Quote Calculator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="jspdf.umd.min.js"></script>
 <style>
   :root{
     color-scheme: light;
-    --paper:#ffffff; --mist:#eef6ec; --sage:#d6ecd0; --grass:#2c8a3e; --grass-bright:#37a94a;
-    --ink:#14201a; --ink-soft:#55635b; --line:#e2ebe0; --amber:#b06a12; --red:#c0392b;
+    --bg:#f6f9f5; --paper:#ffffff; --mist:#eef6ec; --sage:#d6ecd0; --sage-deep:#b9e0b1;
+    --grass:#2c8a3e; --grass-bright:#37a94a; --ink:#14201a; --ink-soft:#55635b; --line:#e2ebe0;
+    --warn-bg:#fdf1ef; --warn-line:#f1c9c4; --warn-ink:#9a2f22;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:#f6f9f5;color:var(--ink);font-family:'Hanken Grotesk',system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom);}
-  h1,h2,h3,h4{font-family:'Archivo',sans-serif;margin:0;letter-spacing:-.01em;color:var(--ink);}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 16px;}
-  a{color:var(--grass);}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom,0px);}
+  h1,h2,h3,h4{font-family:'Archivo',system-ui,sans-serif;margin:0;letter-spacing:-.01em;color:var(--ink);text-wrap:balance;}
+  .wrap{max-width:1080px;margin:0 auto;padding-inline:16px;}
+  button{font-family:inherit;}
+  [hidden]{display:none!important;}
+  :focus-visible{outline:3px solid var(--grass-bright);outline-offset:2px;border-radius:6px;}
 
-  header{position:sticky;top:0;z-index:20;background:var(--ink);color:#fff;padding-top:env(safe-area-inset-top);}
-  .hd{display:flex;align-items:center;justify-content:space-between;height:58px;}
-  .hd .brand{display:flex;align-items:center;gap:.55rem;font-family:'Archivo';font-weight:800;font-size:1.15rem;}
-  .hd .brand .sub{color:#9db0a4;font-weight:700;font-size:.7rem;letter-spacing:.2em;}
+  header{position:sticky;top:0;z-index:20;background:var(--ink);color:#fff;padding-top:env(safe-area-inset-top,0px);}
+  .hd{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;}
+  .brand{display:flex;align-items:center;gap:.55rem;font-family:'Archivo',sans-serif;font-weight:800;font-size:1.1rem;color:#fff;}
+  .brand .sub{color:#9db0a4;font-weight:700;font-size:.7rem;letter-spacing:.2em;}
   .tabs{display:flex;gap:4px;}
-  .tabs button{font-family:'Archivo';font-weight:700;font-size:.85rem;color:#a7bbae;background:none;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;}
+  .tabs button{font-family:'Archivo',sans-serif;font-weight:700;font-size:.85rem;color:#a7bbae;background:none;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;}
   .tabs button.on{background:rgba(255,255,255,.1);color:#fff;}
 
-  .layout{display:grid;grid-template-columns:1fr 360px;gap:20px;padding:20px 0 40px;}
-  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-block:20px 40px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;}
   .card h3{font-size:1.05rem;margin-bottom:4px;}
-  .card .hint{color:var(--ink-soft);font-size:.86rem;margin-bottom:14px;}
+  .hint{color:var(--ink-soft);font-size:.88rem;margin:0 0 14px;}
   .lbl{font-weight:600;font-size:.9rem;margin-bottom:8px;display:block;}
+  .mini{font-size:.8rem;color:var(--ink-soft);margin:6px 0 0;}
+  .badge{display:inline-block;background:var(--mist);color:var(--grass);font-weight:700;font-size:.72rem;padding:2px 8px;border-radius:999px;vertical-align:middle;}
 
-  /* segmented */
   .seg{display:flex;background:var(--mist);border-radius:10px;padding:4px;margin-bottom:16px;}
-  .seg button{flex:1;font-family:'Archivo';font-weight:700;font-size:.9rem;border:0;background:none;padding:9px;border-radius:7px;color:var(--ink-soft);cursor:pointer;}
-  .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .seg button{flex:1;font-family:'Archivo',sans-serif;font-weight:700;font-size:.9rem;border:0;background:none;padding:9px;border-radius:7px;color:var(--ink-soft);cursor:pointer;}
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(20,32,26,.08);}
 
-  /* load grid */
-  .loads{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-  .load{border:2px solid var(--line);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;background:#fff;transition:.12s;}
-  .load:hover{border-color:var(--sage);}
+  .loads{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+  .load{border:2px solid var(--line);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;background:#fff;font:inherit;color:inherit;}
   .load.on{border-color:var(--grass);background:var(--mist);}
-  .load .bar{height:44px;width:26px;margin:0 auto 8px;border:2px solid var(--ink);border-radius:4px;position:relative;overflow:hidden;background:#fff;}
+  .load .bar{height:44px;width:26px;margin:0 auto 8px;border:2px solid var(--ink);border-radius:4px;position:relative;overflow:hidden;background:#fff;display:block;}
   .load .bar i{position:absolute;left:0;right:0;bottom:0;background:var(--grass);}
-  .load .fr{font-family:'Archivo';font-weight:800;font-size:.95rem;}
-  .load .cy{font-size:.68rem;color:var(--ink-soft);}
-  .load .pr{font-size:.78rem;color:var(--grass);font-weight:700;margin-top:3px;}
+  .load .fr{font-family:'Archivo',sans-serif;font-weight:800;font-size:.95rem;display:block;}
+  .load .cy{font-size:.68rem;color:var(--ink-soft);display:block;}
+  .load .pr{font-size:.78rem;color:var(--grass);font-weight:700;margin-top:3px;display:block;font-variant-numeric:tabular-nums;}
 
-  /* steppers / items */
-  .row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
   .row:last-child{border-bottom:0;}
   .row .nm{font-size:.94rem;}
   .row .nm small{display:block;color:var(--ink-soft);font-size:.76rem;}
-  .step{display:flex;align-items:center;gap:10px;}
-  .step button{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-size:1.2rem;line-height:1;cursor:pointer;color:var(--ink);}
-  .step button:hover{border-color:var(--grass);color:var(--grass);}
-  .step .q{min-width:20px;text-align:center;font-family:'Archivo';font-weight:700;}
+  .step{display:flex;align-items:center;gap:10px;flex:none;}
+  .step button{width:38px;height:38px;border-radius:9px;border:1.5px solid var(--line);background:#fff;font-size:1.25rem;line-height:1;cursor:pointer;color:var(--ink);}
+  .step .q{min-width:20px;text-align:center;font-family:'Archivo',sans-serif;font-weight:700;font-variant-numeric:tabular-nums;}
 
-  /* toggles */
   .chips{display:flex;flex-wrap:wrap;gap:8px;}
-  .chip{border:1.5px solid var(--line);border-radius:999px;padding:7px 13px;font-size:.86rem;cursor:pointer;background:#fff;user-select:none;}
+  .chip{border:1.5px solid var(--line);border-radius:999px;padding:8px 13px;font-size:.88rem;cursor:pointer;background:#fff;color:var(--ink);}
   .chip.on{border-color:var(--grass);background:var(--mist);color:var(--grass);font-weight:600;}
 
-  input[type=text],input[type=number],select,textarea{width:100%;font-family:inherit;font-size:1rem;padding:.6rem .7rem;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);}
+  input[type=text],input[type=tel],input[type=number],select,textarea{width:100%;font-family:inherit;font-size:16px;padding:.65rem .75rem;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--grass);}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .mini{font-size:.78rem;color:var(--ink-soft);margin-top:4px;}
 
-  /* photos */
-  .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:92px;border:2px dashed var(--sage);border-radius:12px;padding:20px 16px;text-align:center;color:var(--ink-soft);cursor:pointer;background:var(--mist);line-height:1.5;}
-  .drop b{color:var(--grass);}
+  .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:92px;border:2px dashed var(--sage-deep);border-radius:12px;padding:20px 16px;text-align:center;color:var(--ink-soft);cursor:pointer;background:var(--mist);}
+  .drop b{color:var(--grass);font-size:1.02rem;}
   .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:12px;}
-  .thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+  .thumb{position:relative;aspect-ratio:1;max-width:100%;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--mist);}
   .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-  .thumb button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(20,32,26,.8);color:#fff;cursor:pointer;font-size:.8rem;line-height:1;}
+  .thumb button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(20,32,26,.8);color:#fff;cursor:pointer;font-size:.9rem;line-height:1;}
 
-  /* crew slider */
   .crew{display:flex;gap:8px;}
-  .crew button{flex:1;border:2px solid var(--line);border-radius:10px;padding:10px;font-family:'Archivo';font-weight:800;background:#fff;cursor:pointer;}
+  .crew button{flex:1;border:2px solid var(--line);border-radius:10px;padding:10px;font-family:'Archivo',sans-serif;font-weight:800;background:#fff;cursor:pointer;color:var(--ink);}
   .crew button.on{border-color:var(--grass);background:var(--mist);color:var(--grass);}
 
-  /* quote panel */
-  .quote{position:sticky;top:78px;}
+  .quote{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);align-self:start;}
   .qcard{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;}
-  .qtop{background:var(--grass);color:#fff;padding:20px;}
-  .qtop .cap{font-size:.8rem;opacity:.85;text-transform:uppercase;letter-spacing:.1em;}
-  .qtop .big{font-family:'Archivo';font-weight:800;font-size:2.6rem;line-height:1;margin-top:4px;}
-  .qtop .rng{font-size:.9rem;opacity:.9;margin-top:6px;}
-  .qbody{padding:16px 20px;}
-  .qline{display:flex;justify-content:space-between;font-size:.9rem;padding:5px 0;color:var(--ink-soft);}
-  .qline b{color:var(--ink);}
-  .qbody .tot{border-top:1px solid var(--line);margin-top:8px;padding-top:10px;font-size:1.05rem;}
-  .meta{display:flex;gap:10px;margin-top:12px;}
-  .meta div{flex:1;background:var(--mist);border-radius:10px;padding:10px;text-align:center;}
-  .meta .v{font-family:'Archivo';font-weight:800;font-size:1.1rem;}
+  .qmode{display:flex;gap:4px;padding:8px;border-bottom:1px solid var(--line);}
+  .qmode button{flex:1;font-family:'Archivo',sans-serif;font-weight:700;font-size:.8rem;border:0;background:var(--mist);color:var(--ink-soft);padding:9px 6px;border-radius:8px;cursor:pointer;}
+  .qmode button.on{background:var(--ink);color:#fff;}
+  .qtop{background:var(--grass);color:#fff;padding:18px 20px;}
+  .qtop .cap{font-size:.78rem;opacity:.9;text-transform:uppercase;letter-spacing:.1em;}
+  .qtop .big{font-family:'Archivo',sans-serif;font-weight:800;font-size:2.5rem;line-height:1.05;margin-top:4px;font-variant-numeric:tabular-nums;}
+  .qtop .big.rangefs{font-size:1.95rem;}
+  .qtop .rng{font-size:.88rem;opacity:.92;margin-top:6px;}
+  .qtop .num{font-size:.78rem;opacity:.85;margin-top:6px;font-variant-numeric:tabular-nums;}
+  .qbody{padding:14px 20px;}
+  .qline{display:flex;justify-content:space-between;gap:10px;font-size:.9rem;padding:5px 0;color:var(--ink-soft);}
+  .qline b{color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .qline.tot{border-top:1px solid var(--line);margin-top:8px;padding-top:10px;font-size:1.05rem;}
+  .meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+  .meta div{background:var(--mist);border-radius:10px;padding:10px 6px;text-align:center;}
+  .meta .v{font-family:'Archivo',sans-serif;font-weight:800;font-size:1.05rem;font-variant-numeric:tabular-nums;}
   .meta .k{font-size:.72rem;color:var(--ink-soft);}
-  .ownerbtn{width:100%;margin-top:12px;background:none;border:1px dashed var(--line);color:var(--ink-soft);border-radius:10px;padding:9px;font-family:'Archivo';font-weight:700;font-size:.82rem;cursor:pointer;}
-  .owner{display:none;margin-top:12px;background:var(--ink);color:#dfe7e1;border-radius:12px;padding:14px;font-size:.86rem;}
-  .owner.show{display:block;}
-  .owner .ol{display:flex;justify-content:space-between;padding:3px 0;}
+  .ownerbtn{width:100%;margin-top:12px;background:none;border:1px dashed var(--line);color:var(--ink-soft);border-radius:10px;padding:10px;font-family:'Archivo',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;}
+  .owner{margin-top:12px;background:var(--ink);color:#dfe7e1;border-radius:12px;padding:14px;font-size:.86rem;}
+  .owner .ol{display:flex;justify-content:space-between;padding:3px 0;font-variant-numeric:tabular-nums;}
   .owner .ol b{color:#fff;}
   .owner .profit{border-top:1px solid rgba(255,255,255,.15);margin-top:6px;padding-top:8px;}
-  .owner .pv{font-family:'Archivo';font-weight:800;font-size:1.3rem;color:var(--grass-bright);}
+  .owner .pv{font-family:'Archivo',sans-serif;font-weight:800;font-size:1.3rem;color:#4cc562;}
   .owner .warn{color:#ffb454;}
-  .btnrow{display:flex;gap:8px;padding:0 20px 20px;}
-  .btn{flex:1;font-family:'Archivo';font-weight:700;border-radius:10px;padding:11px;border:0;cursor:pointer;font-size:.9rem;}
+  .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 20px 12px;}
+  .btn{font-family:'Archivo',sans-serif;font-weight:700;border-radius:10px;padding:12px;border:0;cursor:pointer;font-size:.92rem;}
+  .btn:disabled{opacity:.55;cursor:default;}
   .btn-p{background:var(--grass);color:#fff;}
+  .btn-dark{background:var(--ink);color:#fff;}
   .btn-o{background:#fff;border:1.5px solid var(--line);color:var(--ink);}
+  .btn-full{grid-column:1 / -1;}
+  .panelnote{padding:0 20px 16px;font-size:.84rem;color:var(--ink-soft);min-height:1.2em;}
+  .panelnote.err{color:var(--warn-ink);}
 
-  .qmode{display:flex;gap:4px;padding:8px;background:#fff;border-bottom:1px solid var(--line);}
-  .qmode button{flex:1;font-family:'Archivo';font-weight:700;font-size:.8rem;border:0;background:var(--mist);color:var(--ink-soft);padding:9px 6px;border-radius:8px;cursor:pointer;}
-  .qmode button.on{background:var(--ink);color:#fff;}
-  .qtop .big.rangefs{font-size:2.05rem;}
-  .noaccept{display:flex;flex-wrap:wrap;gap:8px;}
-  .noaccept span{border:1.5px solid #f1c9c4;background:#fdf1ef;color:#9a2f22;border-radius:999px;padding:6px 12px;font-size:.84rem;font-weight:600;}
-  .howlist{margin:6px 0 0;padding-left:20px;font-size:.92rem;}
-  .howlist li{margin-bottom:6px;}
-  .fillsvg{max-width:420px;margin:10px 0 4px;}
-  /* price sheet */
+  .saved h3{font-size:1rem;margin-bottom:6px;}
+  .savedhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
+  .savedhead button{font-family:'Archivo',sans-serif;font-weight:700;font-size:.78rem;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer;}
+  .srow{border-top:1px solid var(--line);padding:10px 0;display:grid;gap:6px;}
+  .srow:first-child{border-top:0;}
+  .stop{display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
+  .stop .who{font-weight:600;font-size:.93rem;overflow-wrap:anywhere;}
+  .stop .amt{font-family:'Archivo',sans-serif;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .ssub{font-size:.78rem;color:var(--ink-soft);}
+  .sact{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .sact button{font-family:'Archivo',sans-serif;font-weight:700;font-size:.8rem;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer;}
+  .sact button.danger{border-color:var(--warn-line);color:var(--warn-ink);}
+  .sact select{width:auto;font-size:.85rem;padding:5px 8px;}
+
+  .install{background:var(--ink);color:#dfe7e1;border-radius:14px;padding:14px 16px;margin-top:20px;font-size:.9rem;display:flex;gap:12px;align-items:flex-start;}
+  .install b{color:#fff;}
+  .install button{margin-left:auto;flex:none;background:none;border:0;color:#9db0a4;font-size:1.2rem;cursor:pointer;line-height:1;}
+
   .sheet table{width:100%;border-collapse:collapse;font-size:.9rem;}
-  .sheet th{background:var(--ink);color:#fff;text-align:left;padding:8px 10px;font-family:'Archivo';font-size:.82rem;}
+  .sheet th{background:var(--ink);color:#fff;text-align:left;padding:8px 10px;font-family:'Archivo',sans-serif;font-size:.82rem;}
   .sheet td{padding:7px 10px;border-bottom:1px solid var(--line);}
   .sheet tr:nth-child(even) td{background:#f8faf7;}
-  .sheet .t-right{text-align:right;}
-  .badge{display:inline-block;background:var(--mist);color:var(--grass);font-weight:700;font-size:.72rem;padding:2px 8px;border-radius:999px;}
-  .hide{display:none;}
+  .t-right{text-align:right;}
+  .tablewrap{overflow-x:auto;}
+  .noaccept{display:flex;flex-wrap:wrap;gap:8px;}
+  .noaccept span{border:1.5px solid var(--warn-line);background:var(--warn-bg);color:var(--warn-ink);border-radius:999px;padding:6px 12px;font-size:.84rem;font-weight:600;}
+  .howlist{margin:6px 0 0;padding-left:20px;font-size:.92rem;}
+  .howlist li{margin-bottom:6px;}
+  .fillsvg{max-width:420px;width:100%;margin:10px 0 4px;}
 
   @media (max-width:880px){
-    .layout{grid-template-columns:1fr;}
+    .layout{grid-template-columns:minmax(0,1fr);}
     .quote{position:static;}
-    .loads{grid-template-columns:repeat(4,1fr);}
   }
   @media (max-width:520px){
-    .loads{grid-template-columns:repeat(4,1fr);gap:6px;}
+    .loads{gap:6px;}
     .load{padding:9px 3px;}
     .load .cy{display:none;}
     .grid2{grid-template-columns:1fr;}
+    .brand .sub{display:none;}
   }
-  @media print{
-    header,.tabs,.ownerbtn,.owner,.btnrow,.drop,#view-sheet{display:none!important;}
-    .layout{grid-template-columns:1fr;}
-    body{background:#fff;}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important;}}
+
+  /* ---- v3: shared server, AI, jobs ---- */
+  input[type=url],input[type=password],input[type=date],input[type=search]{width:100%;font-family:inherit;font-size:16px;padding:.65rem .75rem;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);}
+  input[type=date]{min-height:46px;}
+  textarea{resize:vertical;min-height:70px;}
+  .load.ai{box-shadow:0 0 0 3px var(--sage);}
+  .hdr-right{display:flex;align-items:center;gap:6px;}
+  .tabs svg{display:none;}
+  .tcount{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:999px;background:var(--grass-bright);color:#fff;font-size:.68rem;line-height:18px;text-align:center;}
+  .gear{background:none;border:0;color:#a7bbae;cursor:pointer;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;}
+  .gear:hover,.gear.on{background:rgba(255,255,255,.1);color:#fff;}
+  body.gate .tabs, body.gate .gear{display:none;}
+
+  .aibox{margin-top:14px;display:grid;gap:10px;}
+  .aiactions{display:flex;gap:8px;flex-wrap:wrap;}
+  .airesult{border:1px solid var(--sage-deep);background:var(--mist);border-radius:12px;padding:14px;}
+  .airesult .ttl{font-family:'Archivo',sans-serif;font-weight:700;margin-bottom:6px;}
+  .airesult p{margin:0 0 8px;font-size:.93rem;}
+  .airesult ul{margin:0 0 8px;padding-left:18px;font-size:.9rem;}
+  .airesult .conf{font-size:.8rem;color:var(--ink-soft);}
+  .warnbox{border:1.5px solid var(--warn-line);background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:10px 12px;font-size:.9rem;font-weight:600;}
+  .status{font-size:.88rem;color:var(--ink-soft);min-height:1.2em;}
+  .status.err{color:var(--warn-ink);}
+  .thumb .ph{display:grid;place-items:center;width:100%;height:100%;font-size:.72rem;color:var(--ink-soft);}
+
+  .toolbar{display:flex;gap:8px;align-items:center;margin:4px 0 12px;}
+  .toolbar input{flex:1;}
+  .smallbtn{font-family:'Archivo',sans-serif;font-weight:700;font-size:.8rem;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:7px 11px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;}
+  .smallbtn.danger{border-color:var(--warn-line);color:var(--warn-ink);}
+  .smallbtn.go{background:var(--grass);border-color:var(--grass);color:#fff;}
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .filters .chip{padding:6px 11px;font-size:.82rem;}
+  .banner{border-radius:12px;padding:10px 12px;font-size:.88rem;margin-bottom:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--mist);border:1px solid var(--sage-deep);}
+  .banner.err{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn-ink);}
+  .tag{display:inline-block;font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;background:var(--mist);color:var(--grass);}
+  .tag.local{background:#fff4e0;color:#8a5a00;}
+  .tag.s-Booked{background:#e3efff;color:#1d4f91;}
+  .tag.s-Done{background:var(--ink);color:#fff;}
+  .tag.s-Lost{background:#f1f1f1;color:#666;}
+  .synced{font-size:.76rem;color:var(--ink-soft);margin-top:10px;}
+
+  .jgroup{margin-top:18px;}
+  .jgroup:first-child{margin-top:0;}
+  .jgroup h4{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-bottom:8px;}
+  .jgroup.past h4{color:var(--warn-ink);}
+  .job{background:#fff;border:1px solid var(--line);border-left:4px solid var(--grass);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:grid;gap:6px;}
+  .job.done{border-left-color:var(--ink-soft);opacity:.8;}
+  .job.nodate{border-left-color:#e0a100;}
+  .jtime{font-family:'Archivo',sans-serif;font-weight:800;font-size:.95rem;color:var(--grass);}
+  .jnotes{font-size:.86rem;background:var(--mist);border-radius:8px;padding:7px 9px;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .empty{color:var(--ink-soft);font-size:.92rem;padding:10px 0;}
+
+  .overlay{position:fixed;inset:0;z-index:50;background:rgba(20,32,26,.55);display:flex;align-items:flex-end;justify-content:center;padding:0;}
+  .dlg{background:#fff;width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));max-height:92vh;overflow-y:auto;display:grid;gap:10px;}
+  .dlg .lbl{margin-bottom:-4px;}
+  .dlgbtns{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:6px;}
+  @media (min-width:721px){ .overlay{align-items:center;padding:16px;} .dlg{border-radius:18px;} }
+
+  .form{display:grid;gap:10px;max-width:460px;}
+  .form .lbl{margin-bottom:-4px;}
+  .linkbtn{background:none;border:0;color:var(--ink-soft);text-decoration:underline;font:inherit;font-size:.9rem;cursor:pointer;padding:6px 0;justify-self:start;}
+  .connstate{display:flex;align-items:center;gap:8px;font-size:.92rem;margin-bottom:14px;}
+  .connstate i{width:10px;height:10px;border-radius:50%;background:#c9d3cc;flex:none;}
+  .connstate.on i{background:var(--grass-bright);}
+  .setlinks{display:flex;gap:8px;flex-wrap:wrap;}
+
+  @media (max-width:720px){
+    body{padding-bottom:calc(74px + env(safe-area-inset-bottom,0px));}
+    .tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--ink);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));justify-content:space-around;border-top:1px solid rgba(255,255,255,.08);}
+    .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;padding:6px 2px;position:relative;}
+    .tabs svg{display:block;width:22px;height:22px;}
+    .tabs .tcount{position:absolute;top:0;left:calc(50% + 6px);margin:0;}
+    body.gate{padding-bottom:env(safe-area-inset-bottom,0px);}
   }
 </style>
 </head>
@@ -159,46 +247,66 @@
 <header>
   <div class="wrap hd">
     <div class="brand">
-      <svg width="30" height="30" viewBox="0 0 48 48"><rect x="2" y="2" width="44" height="44" rx="11" fill="#2c8a3e"/><path d="M25 15 L34 24 L25 33" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="10" y="22.3" width="11" height="3.2" rx="1.6" fill="#fff" opacity=".85"/></svg>
+      <svg width="30" height="30" viewBox="0 0 48 48" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="11" fill="#2c8a3e"/><path d="M25 15 L34 24 L25 33" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="10" y="22.3" width="11" height="3.2" rx="1.6" fill="#fff" opacity=".85"/></svg>
       EXPRESS<span class="sub">&nbsp;REMOVAL</span>
     </div>
-    <div class="tabs">
-      <button id="tab-calc" class="on" onclick="showView('calc')">Calculator</button>
-      <button id="tab-sheet" onclick="showView('sheet')">Price sheet</button>
+    <div class="hdr-right">
+      <nav class="tabs" aria-label="Sections">
+        <button id="tab-calc" class="on" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg>Quote</button>
+        <button id="tab-list" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>Quotes</button>
+        <button id="tab-jobs" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Jobs<span class="tcount" id="jobsCount" hidden></span></button>
+        <button id="tab-sheet" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12l-8 8-9-9V3h8z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Prices</button>
+      </nav>
+      <button class="gear" id="gearBtn" type="button" aria-label="Settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
   </div>
 </header>
 
-<!-- ================= CALCULATOR ================= -->
-<div id="view-calc" class="wrap">
+<div class="wrap">
+  <div class="install" id="installTip" hidden>
+    <div><b>Put this on your home screen.</b> <span id="installText"></span></div>
+    <button type="button" id="installClose" aria-label="Hide this tip">&times;</button>
+  </div>
+</div>
+
+<!-- ================= QUOTE ================= -->
+<div id="view-calc" class="wrap" hidden>
   <div class="layout">
     <div class="main">
 
       <div class="card">
         <h3>Job photos</h3>
-        <p class="hint">Snap the pile or upload photos. They attach to the quote for your records.</p>
+        <p class="hint">Snap the pile or add the customer's photos, then let Claude estimate the load. You can change anything it fills in.</p>
         <label class="drop" for="photoInput">
-          <b>Tap to add photos</b> or take one now<br><span style="font-size:.8rem">JPG / PNG, several at a time</span>
+          <b>Tap to add photos</b>
+          <span>Take one now or pick from your camera roll</span>
         </label>
-        <input id="photoInput" type="file" accept="image/*" capture="environment" multiple class="hide">
+        <input id="photoInput" type="file" accept="image/*" multiple hidden>
         <div id="thumbs" class="thumbs"></div>
+        <div class="aibox">
+          <div>
+            <label class="lbl" for="aiNotes">Anything the photos don't show <span class="mini">(optional)</span></label>
+            <textarea id="aiNotes" placeholder="Example: 2nd floor, plus an old fridge in the garage"></textarea>
+          </div>
+          <div class="aiactions">
+            <button class="btn btn-p" id="aiBtn" type="button" disabled>Estimate from photos</button>
+            <button class="btn btn-o" id="aiStop" type="button" hidden>Stop</button>
+            <button class="btn btn-o" id="aiUndo" type="button" hidden>Undo estimate</button>
+          </div>
+          <div class="status" id="aiStatus" role="status" aria-live="polite"></div>
+          <div id="aiResult"></div>
+        </div>
       </div>
 
       <div class="card">
         <h3>How much is there?</h3>
-        <p class="hint">Estimate how much of the trailer it fills, or price single items. On site, use the fill lines painted inside the trailer (guide on the Price sheet tab).</p>
+        <p class="hint">Pick how much of the trailer it fills, or price single items. On site, use the fill lines painted inside the trailer.</p>
         <div class="seg">
-          <button id="mode-load" class="on" onclick="setMode('load')">By load size</button>
-          <button id="mode-item" onclick="setMode('item')">Single items</button>
+          <button id="mode-load" class="on" type="button">By load size</button>
+          <button id="mode-item" type="button">Single items</button>
         </div>
-
-        <div id="loadPane">
-          <div class="loads" id="loadGrid"></div>
-        </div>
-
-        <div id="itemPane" class="hide">
-          <p class="hint" style="margin-top:0">Priced individually. A minimum charge applies.</p>
-        </div>
+        <div id="loadPane"><div class="loads" id="loadGrid"></div></div>
+        <div id="itemPane" hidden></div>
       </div>
 
       <div class="card">
@@ -212,17 +320,17 @@
         <div class="grid2" style="margin-bottom:14px">
           <div>
             <span class="lbl">Flights of stairs</span>
-            <div class="step"><button onclick="bump('stairs',-1)">&minus;</button><span class="q" id="q-stairs">0</span><button onclick="bump('stairs',1)">+</button></div>
+            <div class="step"><button type="button" data-bump="stairs" data-d="-1" aria-label="Fewer flights">&minus;</button><span class="q" id="q-stairs">0</span><button type="button" data-bump="stairs" data-d="1" aria-label="More flights">+</button></div>
           </div>
           <div>
-            <span class="lbl">Items to disassemble</span>
-            <div class="step"><button onclick="bump('disassembly',-1)">&minus;</button><span class="q" id="q-disassembly">0</span><button onclick="bump('disassembly',1)">+</button></div>
+            <span class="lbl">Items to take apart</span>
+            <div class="step"><button type="button" data-bump="disassembly" data-d="-1" aria-label="Fewer items">&minus;</button><span class="q" id="q-disassembly">0</span><button type="button" data-bump="disassembly" data-d="1" aria-label="More items">+</button></div>
           </div>
         </div>
         <div class="chips">
-          <div class="chip" data-flag="longCarry" onclick="toggleFlag(this)">Long carry (50 ft+)</div>
-          <div class="chip" data-flag="sameDay" onclick="toggleFlag(this)">Same-day / after hours</div>
-          <div class="chip" data-flag="storm" onclick="toggleFlag(this)">Storm priority</div>
+          <button type="button" class="chip" data-flag="longCarry">Long carry (50 ft+)</button>
+          <button type="button" class="chip" data-flag="sameDay">Same-day / after hours</button>
+          <button type="button" class="chip" data-flag="storm">Storm priority</button>
         </div>
       </div>
 
@@ -231,8 +339,8 @@
         <p class="hint">Concrete, dirt, brick, roofing. Priced by the ton, not by volume.</p>
         <div class="grid2">
           <div>
-            <span class="lbl">Material</span>
-            <select id="heavyMat" onchange="calc()">
+            <label class="lbl" for="heavyMat">Material</label>
+            <select id="heavyMat">
               <option value="none">None</option>
               <option value="debris">Mixed C&amp;D / roofing</option>
               <option value="concrete">Concrete / brick</option>
@@ -240,8 +348,8 @@
             </select>
           </div>
           <div>
-            <span class="lbl">Approx. tons</span>
-            <input id="heavyTons" type="number" min="0" step="0.5" value="0" oninput="calc()">
+            <label class="lbl" for="heavyTons">Approx. tons</label>
+            <input id="heavyTons" type="number" inputmode="decimal" min="0" step="0.5" value="0">
           </div>
         </div>
       </div>
@@ -251,23 +359,19 @@
         <span class="lbl">Crew members on the job</span>
         <div class="crew" id="crewSel"></div>
         <div class="grid2" style="margin-top:14px">
-          <div>
-            <span class="lbl">Labor rate ($/hr each)</span>
-            <input id="laborRate" type="number" value="20" oninput="calc()">
-          </div>
-          <div>
-            <span class="lbl">Fuel / drive ($)</span>
-            <input id="fuel" type="number" value="25" oninput="calc()">
-          </div>
+          <div><label class="lbl" for="laborRate">Labor rate ($/hr each)</label><input id="laborRate" type="number" inputmode="decimal" value="20"></div>
+          <div><label class="lbl" for="fuel">Fuel / drive ($)</label><input id="fuel" type="number" inputmode="decimal" value="25"></div>
         </div>
-        <p class="mini">These only affect your cost and margin, not the customer price.</p>
+        <p class="mini">These only change your cost and margin, never the customer price.</p>
       </div>
 
       <div class="card">
-        <h3>Customer &amp; job</h3>
+        <h3>Customer</h3>
         <div class="grid2">
-          <div><span class="lbl">Customer name</span><input id="custName" type="text" placeholder="Optional"></div>
-          <div><span class="lbl">Area</span>
+          <div><label class="lbl" for="custName">Name</label><input id="custName" type="text" autocomplete="off" placeholder="Customer name"></div>
+          <div><label class="lbl" for="custPhone">Phone</label><input id="custPhone" type="tel" autocomplete="off" placeholder="(910) 000-0000"></div>
+          <div><label class="lbl" for="custAddr">Job address</label><input id="custAddr" type="text" autocomplete="off" placeholder="Street address"></div>
+          <div><label class="lbl" for="area">Area</label>
             <select id="area">
               <option>Wilmington</option><option>Wrightsville Beach</option><option>Carolina Beach</option>
               <option>Kure Beach</option><option>Leland</option><option>Hampstead</option>
@@ -285,51 +389,137 @@
           <span>Gasoline, oil &amp; fuel</span><span>Propane tanks</span><span>Asbestos</span><span>Medical / biohazard waste</span>
         </div>
       </div>
-
-    </div><!-- /main -->
+    </div>
 
     <!-- QUOTE PANEL -->
     <div class="quote">
       <div class="qcard">
         <div class="qmode">
-          <button id="qm-range" class="on" onclick="setQMode('range')">Photo estimate</button>
-          <button id="qm-firm" onclick="setQMode('firm')">On-site firm price</button>
+          <button id="qm-range" class="on" type="button">Photo estimate</button>
+          <button id="qm-firm" type="button">On-site firm price</button>
         </div>
         <div class="qtop">
           <div class="cap" id="quoteCap">Estimate from photos</div>
           <div class="big" id="quotePrice">$95</div>
           <div class="rng" id="quoteRange">Minimum charge</div>
+          <div class="num" id="quoteNum"></div>
         </div>
         <div class="qbody">
           <div id="quoteLines"></div>
           <div class="meta">
-            <div><div class="v" id="mTime">~1.0 hr</div><div class="k">Time on site</div></div>
+            <div><div class="v" id="mTime">~1.0 hr</div><div class="k">On site</div></div>
             <div><div class="v" id="mCrew">2 crew</div><div class="k">Crew</div></div>
-            <div><div class="v" id="mYd">2-3 yd³</div><div class="k">Volume</div></div>
+            <div><div class="v" id="mYd">-</div><div class="k">Volume</div></div>
           </div>
-          <button class="ownerbtn" onclick="toggleOwner()">Owner view: cost &amp; profit &#9662;</button>
-          <div class="owner" id="ownerView"></div>
+          <button class="ownerbtn" id="ownerBtn" type="button" aria-expanded="false">Owner view: cost &amp; profit</button>
+          <div class="owner" id="ownerView" hidden></div>
         </div>
         <div class="btnrow">
-          <button class="btn btn-p" onclick="copyQuote()">Copy quote</button>
-          <button class="btn btn-o" onclick="window.print()">Print / PDF</button>
+          <button class="btn btn-p btn-full" id="pdfBtn" type="button">Make PDF quote</button>
+          <button class="btn btn-dark" id="sendPdfBtn" type="button" hidden>Send PDF</button>
+          <button class="btn btn-o" id="savePdfBtn" type="button" hidden>Save PDF</button>
+          <button class="btn btn-o" id="saveBtn" type="button">Save quote</button>
+          <button class="btn btn-o" id="copyBtn" type="button">Copy text</button>
+          <button class="btn btn-dark btn-full" id="schedBtn" type="button" hidden>Schedule job</button>
+          <button class="btn btn-o btn-full" id="newBtn" type="button">New quote</button>
         </div>
-        <div class="btnrow" style="margin-top:-8px">
-          <button class="btn btn-o" onclick="resetAll()">Reset</button>
-          <button class="btn btn-o" onclick="saveQuote()">Save</button>
-        </div>
-      </div>
-      <div id="savedWrap" class="card hide" style="margin-top:16px">
-        <h3 style="font-size:.95rem">Saved quotes</h3>
-        <div id="savedList"></div>
+        <div class="panelnote" id="panelNote" role="status" aria-live="polite"></div>
       </div>
     </div>
+  </div>
+</div>
 
+<!-- ================= QUOTES (shared) ================= -->
+<div id="view-list" class="wrap" hidden>
+  <div class="card saved" style="margin-top:20px">
+    <div class="savedhead">
+      <h3>Quotes</h3>
+      <div class="setlinks">
+        <button type="button" class="smallbtn" id="refreshBtn">Refresh</button>
+        <button type="button" class="smallbtn" id="exportBtn">Export</button>
+      </div>
+    </div>
+    <div id="listBanner"></div>
+    <div class="toolbar"><input type="search" id="listSearch" placeholder="Search name, phone, address" aria-label="Search quotes"></div>
+    <div class="filters" id="listFilters"></div>
+    <div id="savedList"><p class="mini">Loading...</p></div>
+    <div class="synced" id="listSynced"></div>
+  </div>
+</div>
+
+<!-- ================= JOBS ================= -->
+<div id="view-jobs" class="wrap" hidden>
+  <div class="card" style="margin-top:20px">
+    <div class="savedhead">
+      <h3>Jobs</h3>
+      <button type="button" class="smallbtn" id="jobsRefresh">Refresh</button>
+    </div>
+    <p class="hint">Booked jobs by day. They also show on the Express Removal jobs Google Calendar.</p>
+    <div id="jobsBanner"></div>
+    <div id="jobsList"></div>
+  </div>
+</div>
+
+<!-- ================= SETTINGS / CONNECT ================= -->
+<div id="view-settings" class="wrap" hidden>
+  <div class="card" style="margin-top:20px">
+    <h3 id="setTitle">Settings</h3>
+    <p class="hint" id="setIntro">Connect this phone to the crew server so quotes and jobs are shared.</p>
+    <div class="connstate" id="connState"><i></i><span></span></div>
+    <div class="form">
+      <div id="urlWrap" style="display:grid;gap:10px">
+        <label class="lbl" for="cfgUrl">Server link</label>
+        <input id="cfgUrl" type="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <label class="lbl" for="cfgPin">Crew PIN</label>
+      <input id="cfgPin" type="password" inputmode="numeric" autocomplete="off">
+      <label class="lbl" for="cfgName">Your name</label>
+      <input id="cfgName" type="text" autocomplete="off" placeholder="Shows who made each quote">
+      <button class="btn btn-p" id="connectBtn" type="button">Connect</button>
+      <button class="linkbtn" id="skipBtn" type="button" hidden>Skip for now and save on this phone only</button>
+      <div class="status" id="setStatus" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="card" id="setMore">
+    <h3>Shared records</h3>
+    <p class="hint">Every saved quote is a row in the Google Sheet. Photos are in the "Express Removal job photos" Drive folder.</p>
+    <div class="setlinks">
+      <a class="smallbtn" id="sheetLink" href="#" target="_blank" rel="noopener" hidden>Open the Google Sheet</a>
+      <button type="button" class="smallbtn danger" id="disconnectBtn">Disconnect this phone</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SCHEDULE DIALOG ================= -->
+<div class="overlay" id="schedDlg" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="schedTitle">
+    <h3 id="schedTitle">Schedule job</h3>
+    <p class="hint" id="schedWho" style="margin:0"></p>
+    <label class="lbl" for="jobDate">Day</label>
+    <input type="date" id="jobDate">
+    <label class="lbl" for="jobTime">Arrival window</label>
+    <select id="jobTime">
+      <option value="08:00-10:00">8am to 10am</option>
+      <option value="10:00-12:00">10am to 12pm</option>
+      <option value="12:00-14:00">12pm to 2pm</option>
+      <option value="14:00-16:00">2pm to 4pm</option>
+      <option value="16:00-18:00">4pm to 6pm</option>
+      <option value="18:00-20:00">6pm to 8pm</option>
+    </select>
+    <label class="lbl" for="jobCrew">Crew</label>
+    <input type="text" id="jobCrew" autocomplete="off" placeholder="Who's on it">
+    <label class="lbl" for="jobNotes">Notes for the crew</label>
+    <textarea id="jobNotes" placeholder="Gate code, parking, what's staying"></textarea>
+    <div class="dlgbtns">
+      <button class="btn btn-o" id="schedCancel" type="button">Cancel</button>
+      <button class="btn btn-p" id="schedSave" type="button">Book it</button>
+    </div>
+    <div class="status" id="schedStatus" role="status" aria-live="polite"></div>
   </div>
 </div>
 
 <!-- ================= PRICE SHEET ================= -->
-<div id="view-sheet" class="wrap hide">
+<div id="view-sheet" class="wrap" hidden>
   <div class="card sheet" style="margin-top:20px">
     <h2 style="font-size:1.4rem;margin-bottom:4px">Express Removal price sheet</h2>
     <p class="hint">Wilmington / Cape Fear region. Based on a 7x14 dump trailer with 4 ft sides (about 14.5 yd³ full). Measure your actual trailer and adjust. Priced to beat the franchises and match strong local independents while covering New Hanover landfill costs.</p>
@@ -340,7 +530,6 @@
       <li><b>Approve before loading:</b> nothing gets lifted until the customer says yes.</li>
       <li><b>Photo proof:</b> snap the loaded trailer against the fill lines for every job.</li>
     </ol>
-
     <h3 style="margin:18px 0 6px;font-size:1rem">How we measure a load</h3>
     <p class="hint" style="margin-bottom:0">Paint or tape lines inside the trailer walls. Where the pile lands is the load size, and the customer can see it too.</p>
     <svg class="fillsvg" viewBox="0 0 420 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trailer fill lines">
@@ -359,32 +548,36 @@
     <p class="mini">Loads between lines are priced at the in-between tiers (1/8, 1/3, 5/8, 7/8). Level with the top of the sides = full.</p>
 
     <h3 style="margin:18px 0 6px;font-size:1rem">Load-size pricing (general household junk)</h3>
-    <table>
-      <tr><th>Load</th><th>Roughly</th><th class="t-right">Price</th></tr>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Load</th><th>Roughly</th><th class="t-right">Price</th></tr></thead>
       <tbody id="sheetLoads"></tbody>
-    </table>
+    </table></div>
     <h3 style="margin:18px 0 6px;font-size:1rem">Single items &amp; special handling</h3>
-    <table>
-      <tr><th>Item</th><th class="t-right">On its own</th><th class="t-right">Surcharge in a load</th></tr>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Item</th><th class="t-right">On its own</th><th class="t-right">Surcharge in a load</th></tr></thead>
       <tbody id="sheetItems"></tbody>
-    </table>
+    </table></div>
     <h3 style="margin:18px 0 6px;font-size:1rem">Access &amp; extras</h3>
-    <table>
-      <tr><th>Add-on</th><th class="t-right">Charge</th></tr>
-      <tr><td>Stairs</td><td class="t-right">+$30 per flight</td></tr>
-      <tr><td>Long carry (over 50 ft)</td><td class="t-right">+$35</td></tr>
-      <tr><td>Disassembly</td><td class="t-right">+$40 per item</td></tr>
-      <tr><td>Same-day / after hours</td><td class="t-right">+$50</td></tr>
-      <tr><td>Storm / hurricane priority</td><td class="t-right">+$75</td></tr>
-      <tr><td>Barrier-island beaches</td><td class="t-right">No upcharge, schedule ahead</td></tr>
-    </table>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Add-on</th><th class="t-right">Charge</th></tr></thead>
+      <tbody>
+        <tr><td>Stairs</td><td class="t-right">+$30 per flight</td></tr>
+        <tr><td>Long carry (over 50 ft)</td><td class="t-right">+$35</td></tr>
+        <tr><td>Disassembly</td><td class="t-right">+$40 per item</td></tr>
+        <tr><td>Same-day / after hours</td><td class="t-right">+$50</td></tr>
+        <tr><td>Storm / hurricane priority</td><td class="t-right">+$75</td></tr>
+        <tr><td>Barrier-island beaches</td><td class="t-right">No upcharge, schedule ahead</td></tr>
+      </tbody>
+    </table></div>
     <h3 style="margin:18px 0 6px;font-size:1rem">Heavy debris (by weight)</h3>
-    <table>
-      <tr><th>Material</th><th class="t-right">Per ton</th><th>Notes</th></tr>
-      <tr><td>Mixed C&amp;D / roofing</td><td class="t-right">$175</td><td>NHC dumps at $61/ton</td></tr>
-      <tr><td>Concrete / brick</td><td class="t-right">$110</td><td>NHC $10-30/ton</td></tr>
-      <tr><td>Dirt / soil</td><td class="t-right">$110</td><td>NHC $30/ton</td></tr>
-    </table>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Material</th><th class="t-right">Per ton</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Mixed C&amp;D / roofing</td><td class="t-right">$175</td><td>NHC dumps at $61/ton</td></tr>
+        <tr><td>Concrete / brick</td><td class="t-right">$110</td><td>NHC $10-30/ton</td></tr>
+        <tr><td>Dirt / soil</td><td class="t-right">$110</td><td>NHC $30/ton</td></tr>
+      </tbody>
+    </table></div>
     <h3 style="margin:18px 0 6px;font-size:1rem">Not accepted</h3>
     <div class="noaccept">
       <span>Hot tubs &amp; spas</span><span>Pianos &amp; organs</span><span>Paint &amp; chemicals</span>
@@ -395,9 +588,16 @@
 </div>
 
 <script>
+(function(){
+/* =====================================================================
+   PASTE YOUR SERVER LINK HERE (the Apps Script web app URL, ends in /exec).
+   If you leave it blank, each phone pastes the link on the Connect screen.
+   ===================================================================== */
+const SERVER_URL = '';
+
+const BIZ = { phone:'(910) 555-0147', email:'hello@expressmoversnc.com' };
 const P = {
   minimum: 95,
-  cyFull: 15,
   loads: [
     {key:'1/8', cy:'2-3 yd³', price:125, frac:.125, ydMid:2.5},
     {key:'1/4', cy:'3-5 yd³', price:195, frac:.25, ydMid:4},
@@ -406,224 +606,974 @@ const P = {
     {key:'5/8', cy:'9-11 yd³', price:400, frac:.625, ydMid:10},
     {key:'3/4', cy:'11-13 yd³', price:475, frac:.75, ydMid:12},
     {key:'7/8', cy:'13-15 yd³', price:560, frac:.875, ydMid:13.5},
-    {key:'Full', cy:'14-17 yd³', price:625, frac:1, ydMid:15},
+    {key:'Full', cy:'14-17 yd³', price:625, frac:1, ydMid:15}
   ],
   items: [
-    {key:'sofa', label:'Sofa / couch', sub:'', full:110, sur:0},
+    {key:'sofa', label:'Sofa / couch', full:110, sur:0},
     {key:'sectional', label:'Sectional', full:170, sur:0},
     {key:'mattress', label:'Mattress / box spring', sub:'$10 county surcharge', full:85, sur:15},
     {key:'fridge', label:'Fridge / freezer / AC', sub:'Freon recovery', full:95, sur:25},
     {key:'appliance', label:'Washer / dryer / water heater', full:85, sur:15},
     {key:'tv', label:'TV / monitor', sub:'e-waste', full:45, sur:20},
     {key:'tire', label:'Tire', full:20, sur:15},
-    {key:'treadmill', label:'Treadmill / exercise eq.', full:95, sur:35},
+    {key:'treadmill', label:'Treadmill / exercise equipment', full:95, sur:35}
   ],
   access:{stairs:30, disassembly:40, longCarry:35, sameDay:50, storm:75},
-  heavy:{debris:{price:175,tip:61}, concrete:{price:110,tip:25}, dirt:{price:110,tip:30}},
+  heavy:{debris:{price:175,tip:61,label:'Mixed C&D / roofing'}, concrete:{price:110,tip:25,label:'Concrete / brick'}, dirt:{price:110,tip:30,label:'Dirt / soil'}},
   cost:{lbsPerCy:175, tipPerTon:61, overhead:20}
 };
+const STATUSES = ['Quoted','Booked','Done','Lost'];
+const SPECIAL_KEYS = ['mattress','fridge','appliance','tv','tire','treadmill'];
+const LOADKEYS = P.loads.map(l => l.key);
+const $ = id => document.getElementById(id);
+const money = n => '$' + Math.round(Number(n)||0).toLocaleString('en-US');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
 
-let S = {mode:'load', load:null, items:{}, special:{}, stairs:0, disassembly:0,
-         flags:{longCarry:false,sameDay:false,storm:false}, crew:2, photos:[], qmode:'range'};
+function blankState(){
+  return {mode:'load', load:null, aiHigh:null, items:{}, special:{}, stairs:0, disassembly:0,
+    flags:{longCarry:false,sameDay:false,storm:false}, crew:2, qmode:'range',
+    photos:[], id:null, number:null, createdAt:null, status:'Quoted', aiSummary:'', job:null};
+}
+let S = blankState();
+let lastPdf = null;
 
-// ---------- build UI ----------
+/* ---------------- settings on this phone ---------------- */
+const CFG = (() => {
+  let c = {};
+  try { c = JSON.parse(localStorage.getItem('exq-cfg') || '{}') || {}; } catch(e){}
+  return Object.assign({url:'', pin:'', name:'', skipped:false, sheetUrl:'', aiReady:null}, c);
+})();
+function saveCfg(){ try { localStorage.setItem('exq-cfg', JSON.stringify(CFG)); } catch(e){} }
+const serverUrl = () => (CFG.url || SERVER_URL).trim();
+const connected = () => !!(serverUrl() && CFG.pin);
+
+/* ---------------- talking to the server ---------------- */
+const ERR = {
+  offline:'No signal right now.',
+  timeout:'The server took too long to answer. Try again.',
+  cancelled:'Stopped.',
+  bad_response:'That link isn\'t answering like the Express Quote server. Check the link, and that the web app is deployed with access set to Anyone.',
+  bad_pin:'That crew PIN is wrong. Enter it again in Settings.',
+  not_setup:'The server has no crew PIN yet. Add CREW_PIN under Script properties in Apps Script.',
+  no_server:'Connect the crew server in Settings first.',
+  no_key:'Photo estimates need the Claude API key. Add CLAUDE_API_KEY under Script properties in Apps Script.',
+  bad_key:'The Claude API key was rejected. Make a new key and paste it into Script properties.',
+  no_credit:'The Claude API account is out of credit. Add credit at console.anthropic.com.',
+  rate_limited:'Too many estimates at once. Wait a minute and try again.',
+  bad_ai_reply:'The estimate came back unreadable. Tap Estimate again, or pick the load size by hand.',
+  not_found:'That quote isn\'t in the shared list anymore. Someone may have deleted it.',
+  no_images:'Add at least one photo first.'
+};
+function errMsg(e){
+  const c = e && e.code;
+  if(ERR[c]) return ERR[c];
+  if(c === 'ai_error') return 'The photo estimate failed: ' + (e.message || 'unknown error') + '. Pick the load size by hand.';
+  return (e && e.message) ? e.message : 'Something went wrong. Try again.';
+}
+async function api(action, data, opts){
+  opts = opts || {};
+  const url = serverUrl();
+  if(!url || !CFG.pin) throw {code:'no_server'};
+  const ctl = new AbortController(); let cancelled = false, timedOut = false;
+  const t = setTimeout(() => { timedOut = true; ctl.abort(); }, opts.timeout || 45000);
+  if(opts.signal) opts.signal.addEventListener('abort', () => { cancelled = true; ctl.abort(); });
+  let res;
+  try {
+    res = await fetch(url, {method:'POST', redirect:'follow', signal:ctl.signal,
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(Object.assign({action, pin:CFG.pin, by:CFG.name}, data || {}))});
+  } catch(e){
+    throw {code: cancelled ? 'cancelled' : timedOut ? 'timeout' : 'offline'};
+  } finally { clearTimeout(t); }
+  let j;
+  try { j = await res.json(); } catch(e){ throw {code:'bad_response'}; }
+  if(!j || !j.ok){
+    if(j && j.code === 'bad_pin'){ CFG.pin = ''; saveCfg(); renderSettings(); }
+    throw j || {code:'bad_response'};
+  }
+  return j;
+}
+
+/* ---------------- quotes waiting on this phone (IndexedDB) ---------------- */
+const DB = (() => {
+  let opening = null;
+  function open(){
+    if(!opening) opening = new Promise((res, rej) => {
+      const r = indexedDB.open('express-quotes', 1);
+      r.onupgradeneeded = () => { if(!r.result.objectStoreNames.contains('quotes')) r.result.createObjectStore('quotes', {keyPath:'id'}); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    return opening;
+  }
+  async function run(mode, fn){
+    const db = await open();
+    return new Promise((res, rej) => {
+      const t = db.transaction('quotes', mode); const req = fn(t.objectStore('quotes'));
+      t.oncomplete = () => res(req ? req.result : undefined);
+      t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    });
+  }
+  return {
+    put: q => run('readwrite', s => s.put(q)),
+    get: id => run('readonly', s => s.get(id)),
+    del: id => run('readwrite', s => s.delete(id)),
+    all: () => run('readonly', s => s.getAll())
+  };
+})();
+if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+/* ---------------- build UI ---------------- */
 function buildLoads(){
-  document.getElementById('loadGrid').innerHTML = P.loads.map(l=>
-    `<div class="load" data-k="${l.key}" onclick="pickLoad('${l.key}')">
-      <div class="bar"><i style="height:${Math.round(l.frac*100)}%"></i></div>
-      <div class="fr">${l.key}</div><div class="cy">${l.cy}</div><div class="pr">$${l.price}</div>
-    </div>`).join('');
+  $('loadGrid').innerHTML = P.loads.map(l =>
+    `<button type="button" class="load" data-k="${l.key}" aria-label="${l.key} load, ${money(l.price)}">
+      <span class="bar"><i style="height:${Math.round(l.frac*100)}%"></i></span>
+      <span class="fr">${l.key}</span><span class="cy">${l.cy}</span><span class="pr">${money(l.price)}</span>
+    </button>`).join('');
 }
 function itemRow(it, mode){
-  const q = (mode==='item'?S.items:S.special)[it.key]||0;
-  const price = mode==='item'? '$'+it.full : (it.sur>0?'+$'+it.sur:'incl.');
+  const q = (mode==='item' ? S.items : S.special)[it.key] || 0;
+  const price = mode==='item' ? money(it.full) : (it.sur>0 ? '+'+money(it.sur) : 'incl.');
   return `<div class="row">
-    <div class="nm">${it.label} <span style="color:var(--grass);font-weight:600">${price}</span>${it.sub?`<small>${it.sub}</small>`:''}</div>
+    <div class="nm">${esc(it.label)} <span style="color:var(--grass);font-weight:600">${price}</span>${it.sub?`<small>${esc(it.sub)}</small>`:''}</div>
     <div class="step">
-      <button onclick="itemBump('${mode}','${it.key}',-1)">&minus;</button>
+      <button type="button" data-item="${mode}" data-k="${it.key}" data-d="-1" aria-label="Fewer">&minus;</button>
       <span class="q" id="${mode}-${it.key}">${q}</span>
-      <button onclick="itemBump('${mode}','${it.key}',1)">+</button>
+      <button type="button" data-item="${mode}" data-k="${it.key}" data-d="1" aria-label="More">+</button>
     </div></div>`;
 }
 function buildItems(){
-  document.getElementById('itemPane').innerHTML =
-    '<p class="hint" style="margin-top:0">Priced individually. A minimum charge applies.</p>' +
-    P.items.map(it=>itemRow(it,'item')).join('');
-  document.getElementById('specialItems').innerHTML =
-    P.items.filter(it=>it.sur>0).map(it=>itemRow(it,'special')).join('');
+  $('itemPane').innerHTML = '<p class="hint" style="margin-top:0">Priced individually. The $95 minimum applies.</p>' + P.items.map(it=>itemRow(it,'item')).join('');
+  $('specialItems').innerHTML = P.items.filter(it=>it.sur>0).map(it=>itemRow(it,'special')).join('');
 }
 function buildCrew(){
-  document.getElementById('crewSel').innerHTML = [1,2,3,4].map(n=>
-    `<button class="${n===S.crew?'on':''}" onclick="setCrew(${n})">${n}</button>`).join('');
+  $('crewSel').innerHTML = [1,2,3,4].map(n => `<button type="button" class="${n===S.crew?'on':''}" data-crew="${n}">${n}</button>`).join('');
 }
 function buildSheet(){
-  document.getElementById('sheetLoads').innerHTML = P.loads.map(l=>
-    `<tr><td><b>${l.key} load</b></td><td>${l.cy}</td><td class="t-right"><b>$${l.price}</b></td></tr>`).join('')
-    + `<tr><td><b>Minimum</b></td><td>single small item</td><td class="t-right"><b>$${P.minimum}</b></td></tr>`;
-  document.getElementById('sheetItems').innerHTML = P.items.map(it=>
-    `<tr><td>${it.label}</td><td class="t-right">$${it.full}</td><td class="t-right">${it.sur>0?'+$'+it.sur:'included'}</td></tr>`).join('');
+  $('sheetLoads').innerHTML = P.loads.map(l => `<tr><td><b>${l.key} load</b></td><td>${l.cy}</td><td class="t-right"><b>${money(l.price)}</b></td></tr>`).join('')
+    + `<tr><td><b>Minimum</b></td><td>single small item</td><td class="t-right"><b>${money(P.minimum)}</b></td></tr>`;
+  $('sheetItems').innerHTML = P.items.map(it => `<tr><td>${esc(it.label)}</td><td class="t-right">${money(it.full)}</td><td class="t-right">${it.sur>0?'+'+money(it.sur):'included'}</td></tr>`).join('');
 }
-
-// ---------- interactions ----------
-function setMode(m){S.mode=m;
-  document.getElementById('mode-load').classList.toggle('on',m==='load');
-  document.getElementById('mode-item').classList.toggle('on',m==='item');
-  document.getElementById('loadPane').classList.toggle('hide',m!=='load');
-  document.getElementById('itemPane').classList.toggle('hide',m!=='item');
-  calc();
-}
-function pickLoad(k){S.load = (S.load===k?null:k);
-  document.querySelectorAll('.load').forEach(el=>el.classList.toggle('on',el.dataset.k===S.load));
-  calc();
-}
-function itemBump(mode,key,d){const map=mode==='item'?S.items:S.special;
-  map[key]=Math.max(0,(map[key]||0)+d);document.getElementById(mode+'-'+key).textContent=map[key];calc();}
-function bump(k,d){S[k]=Math.max(0,S[k]+d);document.getElementById('q-'+k).textContent=S[k];calc();}
-function toggleFlag(el){const f=el.dataset.flag;S.flags[f]=!S.flags[f];el.classList.toggle('on',S.flags[f]);calc();}
-function setCrew(n){S.crew=n;buildCrew();calc();}
-function showView(v){
-  document.getElementById('view-calc').classList.toggle('hide',v!=='calc');
-  document.getElementById('view-sheet').classList.toggle('hide',v!=='sheet');
-  document.getElementById('tab-calc').classList.toggle('on',v==='calc');
-  document.getElementById('tab-sheet').classList.toggle('on',v==='sheet');
-  window.scrollTo(0,0);
-}
-function setQMode(m){S.qmode=m;
-  document.getElementById('qm-range').classList.toggle('on',m==='range');
-  document.getElementById('qm-firm').classList.toggle('on',m==='firm');
-  calc();
-}
-function toggleOwner(){document.getElementById('ownerView').classList.toggle('show');}
-
-// ---------- photos ----------
-document.getElementById('photoInput').addEventListener('change',e=>{
-  [...e.target.files].forEach(f=>{
-    const r=new FileReader();
-    r.onload=ev=>{S.photos.push(ev.target.result);renderThumbs();};
-    r.readAsDataURL(f);
+function syncControls(){
+  document.querySelectorAll('.load').forEach(el => {
+    el.classList.toggle('on', el.dataset.k === S.load);
+    el.classList.toggle('ai', !!S.aiHigh && el.dataset.k === S.aiHigh && S.aiHigh !== S.load);
   });
-  e.target.value='';
-});
-function renderThumbs(){
-  document.getElementById('thumbs').innerHTML = S.photos.map((src,i)=>
-    `<div class="thumb"><img src="${src}"><button onclick="rmPhoto(${i})">&times;</button></div>`).join('');
+  $('mode-load').classList.toggle('on', S.mode==='load');
+  $('mode-item').classList.toggle('on', S.mode==='item');
+  $('loadPane').hidden = S.mode!=='load';
+  $('itemPane').hidden = S.mode!=='item';
+  $('q-stairs').textContent = S.stairs;
+  $('q-disassembly').textContent = S.disassembly;
+  document.querySelectorAll('.chip[data-flag]').forEach(c => c.classList.toggle('on', !!S.flags[c.dataset.flag]));
+  $('qm-range').classList.toggle('on', S.qmode==='range');
+  $('qm-firm').classList.toggle('on', S.qmode==='firm');
+  buildItems(); buildCrew();
 }
-function rmPhoto(i){S.photos.splice(i,1);renderThumbs();}
 
-// ---------- the math ----------
+/* ---------------- the math ---------------- */
 function compute(){
   let price=0, lines=[], yd=0, manHours=1, bump=0;
   if(S.mode==='load' && S.load){
-    const idx=P.loads.findIndex(x=>x.key===S.load); const l=P.loads[idx]; const nx=P.loads[idx+1];
-    if(nx) bump = nx.price - l.price;
-    price+=l.price; yd=l.ydMid; manHours=1+l.frac*4;
-    lines.push([l.key+' load',l.price]);
-    // special surcharges
-    P.items.forEach(it=>{const q=S.special[it.key]||0; if(q&&it.sur){price+=q*it.sur;manHours+=q*0.12;lines.push([it.label+' x'+q+' (surcharge)',q*it.sur]);}});
+    const idx = P.loads.findIndex(x=>x.key===S.load), l = P.loads[idx];
+    const hiIdx = S.aiHigh ? P.loads.findIndex(x=>x.key===S.aiHigh) : -1;
+    if(hiIdx > idx) bump = P.loads[hiIdx].price - l.price;
+    else if(P.loads[idx+1]) bump = P.loads[idx+1].price - l.price;
+    price += l.price; yd = l.ydMid; manHours = 1 + l.frac*4;
+    lines.push([l.key+' load', l.price]);
+    P.items.forEach(it => { const q = S.special[it.key]||0; if(q && it.sur){ price += q*it.sur; manHours += q*0.12; lines.push([it.label+' x'+q+' (surcharge)', q*it.sur]); } });
   } else if(S.mode==='item'){
     let itemTotal=0, any=false;
-    P.items.forEach(it=>{const q=S.items[it.key]||0; if(q){any=true;itemTotal+=q*it.full;manHours+=q*0.25;yd+=q*0.6;lines.push([it.label+' x'+q,q*it.full]);}});
-    price+= any? Math.max(itemTotal,P.minimum) : 0;
-    if(any && itemTotal<P.minimum){lines.push(['Minimum applied',P.minimum-itemTotal]);}
+    P.items.forEach(it => { const q = S.items[it.key]||0; if(q){ any=true; itemTotal += q*it.full; manHours += q*0.25; yd += q*0.6; lines.push([it.label+' x'+q, q*it.full]); } });
+    if(any){ price += Math.max(itemTotal, P.minimum); if(itemTotal < P.minimum) lines.push(['Minimum applied', P.minimum-itemTotal]); }
   }
-  // access
-  if(S.stairs){const a=S.stairs*P.access.stairs;price+=a;manHours+=S.stairs*0.25;lines.push([S.stairs+' flight(s) stairs',a]);}
-  if(S.disassembly){const a=S.disassembly*P.access.disassembly;price+=a;manHours+=S.disassembly*0.5;lines.push([S.disassembly+' disassembly',a]);}
-  if(S.flags.longCarry){price+=P.access.longCarry;manHours+=0.25;lines.push(['Long carry',P.access.longCarry]);}
-  if(S.flags.sameDay){price+=P.access.sameDay;lines.push(['Same-day / after hours',P.access.sameDay]);}
-  if(S.flags.storm){price+=P.access.storm;lines.push(['Storm priority',P.access.storm]);}
-  // heavy
-  const hm=document.getElementById('heavyMat').value, ht=parseFloat(document.getElementById('heavyTons').value)||0;
-  let heavyTons=0, heavyTip=0;
-  if(hm!=='none' && ht>0){const h=P.heavy[hm];let hp=Math.max(h.price*ht,150);price+=hp;heavyTons=ht;heavyTip=h.tip*ht;manHours+=ht*0.6;lines.push(['Heavy: '+hm+' '+ht+'t',hp]);}
-  // enforce minimum overall if a load or items chosen
-  const hasWork = (S.mode==='load'&&S.load) || (S.mode==='item'&&lines.length) || heavyTons>0;
-  if(hasWork && price<P.minimum){price=P.minimum;}
-
-  // ---- owner cost ----
-  const rate=parseFloat(document.getElementById('laborRate').value)||20;
-  const fuel=parseFloat(document.getElementById('fuel').value)||0;
-  const genTons=(yd*P.cost.lbsPerCy)/2000;
-  const disposal=Math.round(genTons*P.cost.tipPerTon + heavyTip);
-  const labor=Math.round(manHours*rate);
-  const cost=disposal+labor+fuel+P.cost.overhead;
-  const profit=Math.round(price-cost);
-  const margin=price>0?Math.round(profit/price*100):0;
-  const timeOnSite=Math.max(0.5, manHours/S.crew);
-
-  return {price:Math.round(price),high:Math.round(price+bump),lines,yd,disposal,labor,fuel,overhead:P.cost.overhead,cost,profit,margin,timeOnSite,hasWork};
+  if(S.stairs){ const a=S.stairs*P.access.stairs; price+=a; manHours+=S.stairs*0.25; lines.push([S.stairs+' flight(s) of stairs', a]); }
+  if(S.disassembly){ const a=S.disassembly*P.access.disassembly; price+=a; manHours+=S.disassembly*0.5; lines.push([S.disassembly+' item(s) taken apart', a]); }
+  if(S.flags.longCarry){ price+=P.access.longCarry; manHours+=0.25; lines.push(['Long carry', P.access.longCarry]); }
+  if(S.flags.sameDay){ price+=P.access.sameDay; lines.push(['Same-day / after hours', P.access.sameDay]); }
+  if(S.flags.storm){ price+=P.access.storm; lines.push(['Storm priority', P.access.storm]); }
+  const hm = $('heavyMat').value, ht = parseFloat($('heavyTons').value) || 0;
+  let heavyTip = 0, heavyTons = 0;
+  if(hm !== 'none' && ht > 0){ const h = P.heavy[hm]; const hp = Math.max(h.price*ht, 150); price += hp; heavyTons = ht; heavyTip = h.tip*ht; manHours += ht*0.6; lines.push([h.label+', '+ht+' ton'+(ht===1?'':'s'), hp]); }
+  const hasWork = (S.mode==='load' && !!S.load) || (S.mode==='item' && lines.length>0) || heavyTons>0;
+  if(hasWork && price < P.minimum) price = P.minimum;
+  if(!(S.mode==='load' && S.load)) bump = 0;
+  const rate = parseFloat($('laborRate').value) || 20;
+  const fuel = parseFloat($('fuel').value) || 0;
+  const disposal = Math.round((yd*P.cost.lbsPerCy)/2000*P.cost.tipPerTon + heavyTip);
+  const labor = Math.round(manHours*rate);
+  const cost = disposal + labor + fuel + P.cost.overhead;
+  const profit = Math.round(price - cost);
+  const margin = price>0 ? Math.round(profit/price*100) : 0;
+  const timeOnSite = Math.max(0.5, manHours/S.crew);
+  const isRange = S.qmode==='range' && hasWork && bump > 0;
+  return {price:Math.round(price), high:Math.round(price+bump), isRange, lines, yd, disposal, labor, manHours, fuel, overhead:P.cost.overhead, cost, profit, margin, timeOnSite, hasWork};
 }
 
+/* ---------------- dates ---------------- */
+const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+function parseYmd(s){ const a = String(s).split('-').map(Number); return new Date(a[0], a[1]-1, a[2]); }
+function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function dayLabel(s){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s||'')) return '';
+  const today = ymd(new Date());
+  if(s === today) return 'Today';
+  if(s === ymd(addDays(new Date(), 1))) return 'Tomorrow';
+  return parseYmd(s).toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'});
+}
+function hLabel(hm){ const [h, m] = String(hm||'').split(':').map(Number); if(isNaN(h)) return ''; return ((h+11)%12+1) + (m ? ':'+pad(m) : '') + (h<12 ? 'am' : 'pm'); }
+function windowLabel(t){ const p = String(t||'').split('-'); return p[0] ? hLabel(p[0]) + (p[1] ? ' to '+hLabel(p[1]) : '') : ''; }
+
+function calcNum(){
+  let t = S.number ? 'Quote '+S.number : '';
+  if(S.number && S.id) t += S.status && S.status !== 'Quoted' ? ' · '+S.status : ' · saved';
+  if(S.job && S.job.date && S.status === 'Booked') t += ' '+dayLabel(S.job.date)+', '+windowLabel(S.job.time);
+  $('quoteNum').textContent = t;
+  $('schedBtn').textContent = (S.job && S.job.date) ? 'Reschedule job' : 'Schedule job';
+}
 function calc(){
-  const r=compute();
-  const isRange = S.qmode==='range' && r.hasWork && r.high>r.price;
-  const bigEl=document.getElementById('quotePrice');
-  bigEl.textContent = !r.hasWork? '$'+P.minimum : (isRange? '$'+r.price+' - $'+r.high : '$'+r.price);
-  bigEl.classList.toggle('rangefs', isRange);
-  document.getElementById('quoteCap').textContent = S.qmode==='range'? 'Estimate from photos' : 'Firm on-site price';
-  document.getElementById('quoteRange').textContent = !r.hasWork? 'Minimum charge'
-    : (S.qmode==='range'? 'Final price set on site before we lift anything' : 'Flat, all-in. Approved before loading.');
-  const totTxt = isRange? '$'+r.price+' - $'+r.high : '$'+r.price;
-  document.getElementById('quoteLines').innerHTML = r.lines.length?
-    r.lines.map(l=>`<div class="qline"><span>${l[0]}</span><b>$${Math.round(l[1])}</b></div>`).join('')
-      + (isRange? `<div class="qline"><span>Range covers up to the next load size</span><b>+$${r.high-r.price}</b></div>` : '')
-      + `<div class="qline tot"><span>${isRange?'Estimate':'Total'}</span><b>${totTxt}</b></div>`
-    : '<div class="qline">Pick a load size or add items to build a quote.</div>';
-  document.getElementById('mTime').textContent = '~'+r.timeOnSite.toFixed(1)+' hr';
-  document.getElementById('mCrew').textContent = S.crew+' crew';
-  document.getElementById('mYd').textContent = r.yd? (Math.round(r.yd*10)/10)+' yd³' : '-';
-  const warn = r.margin<30;
-  document.getElementById('ownerView').innerHTML = `
-    <div class="ol"><span>Disposal (landfill)</span><b>$${r.disposal}</b></div>
-    <div class="ol"><span>Labor (${(r.labor/ (parseFloat(document.getElementById('laborRate').value)||20)).toFixed(1)} man-hrs)</span><b>$${r.labor}</b></div>
-    <div class="ol"><span>Fuel / drive</span><b>$${r.fuel}</b></div>
-    <div class="ol"><span>Overhead</span><b>$${r.overhead}</b></div>
-    <div class="ol"><span>Your cost</span><b>$${r.cost}</b></div>
-    <div class="ol profit"><span>Profit${S.qmode==='range'?' (low end)':''}</span><span class="pv ${warn?'warn':''}">$${r.profit}</span></div>
-    <div class="ol"><span>Margin</span><b class="${warn?'warn':''}">${r.margin}%${warn?'  (thin)':''}</b></div>`;
+  const r = compute();
+  const big = $('quotePrice');
+  big.textContent = !r.hasWork ? money(P.minimum) : (r.isRange ? money(r.price)+' - '+money(r.high) : money(r.price));
+  big.classList.toggle('rangefs', r.isRange);
+  $('quoteCap').textContent = S.qmode==='range' ? 'Estimate from photos' : 'Firm on-site price';
+  $('quoteRange').textContent = !r.hasWork ? 'Minimum charge' : (S.qmode==='range' ? 'Final price set on site before we lift anything' : 'Flat, all-in. Approved before loading.');
+  calcNum();
+  const totTxt = r.isRange ? money(r.price)+' - '+money(r.high) : money(r.price);
+  const hiIdx = S.aiHigh ? LOADKEYS.indexOf(S.aiHigh) : -1;
+  $('quoteLines').innerHTML = r.lines.length
+    ? r.lines.map(l => `<div class="qline"><span>${esc(l[0])}</span><b>${money(l[1])}</b></div>`).join('')
+      + (r.isRange ? `<div class="qline"><span>Range covers up to ${esc(hiIdx > LOADKEYS.indexOf(S.load) ? 'a '+S.aiHigh+' load' : 'the next load size')}</span><b>+${money(r.high-r.price)}</b></div>` : '')
+      + `<div class="qline tot"><span>${r.isRange?'Estimate':'Total'}</span><b>${totTxt}</b></div>`
+    : '<div class="qline">Pick a load size, add items, or estimate from photos.</div>';
+  $('mTime').textContent = '~'+r.timeOnSite.toFixed(1)+' hr';
+  $('mCrew').textContent = S.crew+' crew';
+  $('mYd').textContent = r.yd ? (Math.round(r.yd*10)/10)+' yd³' : '-';
+  const warn = r.margin < 30;
+  $('ownerView').innerHTML = `
+    <div class="ol"><span>Disposal (landfill)</span><b>${money(r.disposal)}</b></div>
+    <div class="ol"><span>Labor (${r.manHours.toFixed(1)} man-hrs)</span><b>${money(r.labor)}</b></div>
+    <div class="ol"><span>Fuel / drive</span><b>${money(r.fuel)}</b></div>
+    <div class="ol"><span>Overhead</span><b>${money(r.overhead)}</b></div>
+    <div class="ol"><span>Your cost</span><b>${money(r.cost)}</b></div>
+    <div class="ol profit"><span>Profit${r.isRange?' (low end)':''}</span><span class="pv ${warn?'warn':''}">${money(r.profit)}</span></div>
+    <div class="ol"><span>Margin</span><b class="${warn?'warn':''}">${r.margin}%${warn?' (thin)':''}</b></div>`;
+  $('pdfBtn').disabled = !r.hasWork;
+  $('saveBtn').disabled = !r.hasWork;
+  $('schedBtn').hidden = !connected();
+  $('schedBtn').disabled = !r.hasWork;
+  clearPdf();
 }
 
-// ---------- quote text / save ----------
-function quoteText(){
-  const r=compute();
-  const isRange = S.qmode==='range' && r.high>r.price;
-  let t = isRange? 'EXPRESS REMOVAL - Estimate from photos\n' : 'EXPRESS REMOVAL - Quote\n';
-  const nm=document.getElementById('custName').value; if(nm)t+='Customer: '+nm+'\n';
-  t+='Area: '+document.getElementById('area').value+'\n\n';
-  r.lines.forEach(l=>t+='  '+l[0]+': $'+Math.round(l[1])+'\n');
-  t+= isRange? '\nESTIMATE: $'+r.price+' - $'+r.high+'\n' : '\nTOTAL: $'+r.price+'\n';
-  t+='Est. time on site: ~'+r.timeOnSite.toFixed(1)+' hr with '+S.crew+' crew\n';
-  t+= isRange? '\nFinal price confirmed on site before we lift anything. (910) 555-0147'
-             : '\nFlat, all-in price. No surprise fees. (910) 555-0147';
+/* ---------------- interactions ---------------- */
+$('loadGrid').addEventListener('click', e => {
+  const b = e.target.closest('.load'); if(!b) return;
+  S.load = (S.load === b.dataset.k ? null : b.dataset.k); S.aiHigh = null;
+  syncControls(); calc();
+});
+document.addEventListener('click', e => {
+  const it = e.target.closest('[data-item]');
+  if(it){ const map = it.dataset.item==='item' ? S.items : S.special; const k = it.dataset.k;
+    map[k] = Math.max(0, (map[k]||0) + Number(it.dataset.d)); $(it.dataset.item+'-'+k).textContent = map[k]; calc(); return; }
+  const bp = e.target.closest('[data-bump]');
+  if(bp){ const k = bp.dataset.bump; S[k] = Math.max(0, S[k] + Number(bp.dataset.d)); $('q-'+k).textContent = S[k]; calc(); return; }
+  const ch = e.target.closest('.chip[data-flag]');
+  if(ch){ const f = ch.dataset.flag; S.flags[f] = !S.flags[f]; ch.classList.toggle('on', S.flags[f]); calc(); return; }
+  const cr = e.target.closest('[data-crew]');
+  if(cr){ S.crew = Number(cr.dataset.crew); buildCrew(); calc(); }
+});
+$('mode-load').onclick = () => { S.mode='load'; syncControls(); calc(); };
+$('mode-item').onclick = () => { S.mode='item'; syncControls(); calc(); };
+$('qm-range').onclick = () => { S.qmode='range'; syncControls(); calc(); };
+$('qm-firm').onclick = () => { S.qmode='firm'; syncControls(); calc(); };
+['heavyMat','heavyTons','laborRate','fuel'].forEach(id => $(id).addEventListener('input', calc));
+['custName','custPhone','custAddr','area'].forEach(id => $(id).addEventListener('input', clearPdf));
+$('ownerBtn').onclick = () => { const o=$('ownerView'); o.hidden = !o.hidden; $('ownerBtn').setAttribute('aria-expanded', String(!o.hidden)); };
+
+const VIEWS = ['calc','list','jobs','sheet','settings'];
+let currentView = 'calc';
+function showView(v){
+  currentView = v;
+  VIEWS.forEach(x => { $('view-'+x).hidden = x !== v; const t = $('tab-'+x); if(t) t.classList.toggle('on', x === v); });
+  $('gearBtn').classList.toggle('on', v === 'settings');
+  window.scrollTo(0,0);
+  if((v === 'list' || v === 'jobs') && Date.now() - lastRefresh > 20000) refreshList();
+}
+$('tab-calc').onclick = () => showView('calc');
+$('tab-list').onclick = () => showView('list');
+$('tab-jobs').onclick = () => showView('jobs');
+$('tab-sheet').onclick = () => showView('sheet');
+$('gearBtn').onclick = () => { renderSettings(); showView('settings'); };
+function note(msg, err){ const n=$('panelNote'); n.textContent = msg||''; n.classList.toggle('err', !!err); }
+
+/* ---------------- photos ---------------- */
+function loadImg(src){ return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+async function shrink(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await loadImg(url);
+    const s = Math.min(1, 1200 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.naturalWidth*s)); c.height = Math.max(1, Math.round(img.naturalHeight*s));
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return {dataUrl: c.toDataURL('image/jpeg', 0.72), w:c.width, h:c.height, id:null};
+  } finally { URL.revokeObjectURL(url); }
+}
+$('photoInput').addEventListener('change', async e => {
+  const files = [...e.target.files]; e.target.value = '';
+  let bad = 0;
+  for(const f of files){
+    if(S.photos.length >= 12){ note('12 photos is the limit per quote.', true); break; }
+    try { S.photos.push(await shrink(f)); } catch(err){ bad++; }
+  }
+  renderThumbs(); clearPdf();
+  if(bad) note(bad+' photo'+(bad>1?'s':'')+' couldn\'t be opened. Try a screenshot of it instead.', true);
+});
+function renderThumbs(){
+  $('thumbs').innerHTML = S.photos.map((p,i) => `<div class="thumb">${p.dataUrl ? `<img src="${p.dataUrl}" alt="Job photo ${i+1}">` : '<span class="ph">Loading...</span>'}<button type="button" data-rm="${i}" aria-label="Remove photo ${i+1}">&times;</button></div>`).join('');
+  updateAiButton();
+}
+$('thumbs').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if(!b) return; S.photos.splice(Number(b.dataset.rm), 1); renderThumbs(); clearPdf(); });
+
+/* ---------------- AI photo estimate (through the crew server) ---------------- */
+let aiCtl = null, aiUndo = null;
+function setAiStatus(msg, err){ const s=$('aiStatus'); s.textContent = msg; s.classList.toggle('err', !!err); }
+function updateAiButton(){
+  const n = S.photos.filter(p => p.dataUrl).length;
+  $('aiBtn').disabled = !n || !!aiCtl || !connected();
+  if(aiCtl) return;
+  if(!connected()) setAiStatus('Photo estimates run through the crew server. Connect it in Settings (gear, top right).');
+  else if(CFG.aiReady === false) setAiStatus('Photo estimates are off until the Claude API key is added on the server. Pick the load size by hand for now.');
+  else if(!n) setAiStatus('Add photos to get an estimate.');
+  else setAiStatus(n+' photo'+(n>1?'s':'')+' ready.'+(n>5?' The first 5 are used.':''));
+}
+function cleanAi(r){
+  const pick = v => LOADKEYS.includes(String(v)) ? String(v) : null;
+  const load = pick(r && r.load);
+  if(!load) throw {code:'bad_ai_reply'};
+  let lo = pick(r.loadLow) || load, hi = pick(r.loadHigh) || load;
+  if(LOADKEYS.indexOf(hi) < LOADKEYS.indexOf(load)) hi = load;
+  if(LOADKEYS.indexOf(lo) > LOADKEYS.indexOf(load)) lo = load;
+  const items = {};
+  SPECIAL_KEYS.forEach(k => { const n = Math.round(Number(r.items && r.items[k]) || 0); items[k] = Math.max(0, Math.min(n, 20)); });
+  const mat = ['debris','concrete','dirt'].includes(r.heavy && r.heavy.material) ? r.heavy.material : 'none';
+  const tons = mat==='none' ? 0 : Math.max(0, Math.min(Math.round((Number(r.heavy.tons)||0)*2)/2, 20));
+  const stairs = Math.max(0, Math.min(Math.round(Number(r.stairs)||0), 5));
+  const notAccepted = Array.isArray(r.notAccepted) ? r.notAccepted.map(String).filter(Boolean).slice(0,6) : [];
+  const conf = ['low','medium','high'].includes(r.confidence) ? r.confidence : 'medium';
+  return {load, lo, hi, cy: Number(r.cubicYards)||null, items, mat, tons, stairs, notAccepted, summary: String(r.summary||'').slice(0,400), conf};
+}
+function applyAi(a){
+  aiUndo = {state: JSON.parse(JSON.stringify({mode:S.mode, load:S.load, special:S.special, stairs:S.stairs, aiHigh:S.aiHigh, qmode:S.qmode, aiSummary:S.aiSummary})), heavyMat:$('heavyMat').value, heavyTons:$('heavyTons').value};
+  S.mode = 'load'; S.load = a.load; S.aiHigh = a.hi !== a.load ? a.hi : null;
+  S.special = Object.assign({}, a.items); S.qmode = 'range';
+  if(a.stairs) S.stairs = a.stairs;
+  $('heavyMat').value = a.mat; $('heavyTons').value = a.tons;
+  const range = a.lo===a.hi ? a.load+' load' : a.lo+' to '+a.hi+' load (best guess '+a.load+')';
+  S.aiSummary = range + (a.summary ? '. ' + a.summary : '') + (a.notAccepted.length ? ' Not accepted: ' + a.notAccepted.join(', ') + '.' : '');
+  syncControls(); calc();
+  $('aiUndo').hidden = false;
+}
+$('aiUndo').onclick = () => {
+  if(!aiUndo) return;
+  Object.assign(S, aiUndo.state); $('heavyMat').value = aiUndo.heavyMat; $('heavyTons').value = aiUndo.heavyTons;
+  aiUndo = null; $('aiUndo').hidden = true; $('aiResult').innerHTML = '';
+  syncControls(); calc(); setAiStatus('Estimate undone. Your earlier choices are back.');
+};
+function renderAi(a){
+  const itemTxt = SPECIAL_KEYS.filter(k => a.items[k]).map(k => a.items[k]+' '+P.items.find(i=>i.key===k).label.toLowerCase());
+  const range = a.lo===a.hi ? a.load+' load' : a.lo+' to '+a.hi+' load (best guess '+a.load+')';
+  $('aiResult').innerHTML = `<div class="airesult">
+    <div class="ttl">Claude's read: ${esc(range)}${a.cy ? ', about '+esc(Math.round(a.cy*10)/10)+' yd³' : ''}</div>
+    ${a.summary ? `<p>${esc(a.summary)}</p>` : ''}
+    <ul>
+      <li>Special items: ${itemTxt.length ? esc(itemTxt.join(', ')) : 'none spotted'}</li>
+      <li>Heavy debris: ${a.mat==='none' ? 'none' : esc(P.heavy[a.mat].label+', about '+a.tons+' tons')}</li>
+      ${a.stairs ? `<li>Stairs: ${a.stairs} flight${a.stairs>1?'s':''}</li>` : ''}
+    </ul>
+    ${a.notAccepted.length ? `<div class="warnbox">We don't take: ${esc(a.notAccepted.join(', '))}. Tell the customer before quoting.</div>` : ''}
+    <p class="conf" style="margin-top:8px">Confidence: ${esc(a.conf)}. Applied to the quote. Confirm the load size on site before you lift anything.</p>
+  </div>`;
+}
+$('aiBtn').onclick = async () => {
+  const images = S.photos.filter(p => p.dataUrl).slice(0, 5).map(p => p.dataUrl.split(',')[1]);
+  if(!images.length) return;
+  aiCtl = new AbortController();
+  $('aiBtn').disabled = true; $('aiStop').hidden = false;
+  setAiStatus('Looking at '+images.length+' photo'+(images.length>1?'s':'')+'. This usually takes 10 to 40 seconds.');
+  try{
+    const j = await api('estimate', {images, notes:$('aiNotes').value.trim()}, {timeout:120000, signal:aiCtl.signal});
+    const a = cleanAi(j.estimate);
+    applyAi(a); renderAi(a);
+    if(CFG.aiReady !== true){ CFG.aiReady = true; saveCfg(); }
+    setAiStatus('Estimate done.');
+  }catch(e){
+    if(e && e.code === 'no_key'){ CFG.aiReady = false; saveCfg(); }
+    setAiStatus(errMsg(e), !(e && e.code === 'cancelled'));
+  }finally{
+    aiCtl = null; $('aiStop').hidden = true;
+    const msg = $('aiStatus').textContent, err = $('aiStatus').classList.contains('err');
+    updateAiButton(); setAiStatus(msg, err);
+  }
+};
+$('aiStop').onclick = () => { if(aiCtl) aiCtl.abort(); };
+
+/* ---------------- quote identity ---------------- */
+function ensureNumber(){
+  if(!S.number){
+    const d = new Date();
+    S.number = 'EX-' + String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + String(Math.floor(1000 + Math.random()*9000));
+    S.createdAt = d.toISOString();
+  }
+}
+function custInfo(){ return {name:$('custName').value.trim(), phone:$('custPhone').value.trim(), addr:$('custAddr').value.trim(), area:$('area').value}; }
+
+/* ---------------- copy text ---------------- */
+function quoteText(r, c, number, crew){
+  let t = (r.isRange ? 'EXPRESS REMOVAL - Estimate from photos' : 'EXPRESS REMOVAL - Quote') + (number ? ' '+number : '') + '\n';
+  if(c.name) t += 'Customer: '+c.name+'\n';
+  t += 'Area: '+c.area+'\n\n';
+  r.lines.forEach(l => t += '  '+l[0]+': '+money(l[1])+'\n');
+  t += r.isRange ? '\nESTIMATE: '+money(r.price)+' - '+money(r.high)+'\n' : '\nTOTAL: '+money(r.price)+'\n';
+  t += 'Est. time on site: ~'+r.timeOnSite.toFixed(1)+' hr with '+crew+' crew\n';
+  t += r.isRange ? '\nFinal price confirmed on site before we lift anything. '+BIZ.phone : '\nFlat, all-in price. No surprise fees. '+BIZ.phone;
   return t;
 }
-function copyQuote(){navigator.clipboard.writeText(quoteText()).then(()=>{
-  const b=event.target;const o=b.textContent;b.textContent='Copied!';setTimeout(()=>b.textContent=o,1200);
-});}
-function resetAll(){S={mode:'load',load:null,items:{},special:{},stairs:0,disassembly:0,flags:{longCarry:false,sameDay:false,storm:false},crew:2,photos:[],qmode:S.qmode};
-  document.getElementById('heavyMat').value='none';document.getElementById('heavyTons').value=0;
-  document.getElementById('custName').value='';document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
-  document.getElementById('q-stairs').textContent=0;document.getElementById('q-disassembly').textContent=0;
-  setMode('load');buildItems();buildCrew();renderThumbs();calc();
+$('copyBtn').onclick = async () => {
+  const t = quoteText(compute(), custInfo(), S.number, S.crew);
+  try { await navigator.clipboard.writeText(t); note('Quote text copied. Paste it into a text or email.'); }
+  catch(e){ note('Copy didn\'t work on this phone. Use Make PDF quote instead.', true); }
+};
+
+/* ---------------- PDF ---------------- */
+function buildPdf(snap){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'letter'});
+  const W = 612, H = 792, M = 48;
+  const ink=[20,32,26], soft=[85,99,91], green=[44,138,62], mist=[238,246,236], line=[226,235,224];
+  const r = snap.r, c = snap.c;
+  doc.setFillColor(...ink); doc.rect(0,0,W,92,'F');
+  doc.setFillColor(...green); doc.roundedRect(M,26,40,40,8,8,'F');
+  doc.setDrawColor(255,255,255); doc.setLineWidth(4); doc.setLineCap('round'); doc.setLineJoin('round');
+  doc.lines([[9,9],[-9,9]], M+18, 37, [1,1], 'S', false);
+  doc.setLineWidth(3); doc.line(M+8, 46, M+15, 46);
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(20);
+  doc.text('EXPRESS REMOVAL', M+54, 50);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(185,205,192);
+  doc.text('Junk removal, Wilmington NC   '+BIZ.phone+'   '+BIZ.email, M+54, 65);
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.text(r.isRange ? 'ESTIMATE' : 'QUOTE', W-M, 44, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(185,205,192);
+  doc.text(snap.number, W-M, 58, {align:'right'});
+  doc.text(new Date(snap.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), W-M, 71, {align:'right'});
+  let y = 124;
+  doc.setTextColor(...soft); doc.setFontSize(8.5); doc.setFont('helvetica','bold');
+  doc.text('PREPARED FOR', M, y); doc.text('JOB', 340, y);
+  doc.setTextColor(...ink); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text(c.name || 'Customer', M, y+17);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  const custLines = [c.phone, c.addr, c.area].filter(Boolean);
+  custLines.forEach((t,i) => doc.text(t, M, y+33+i*14));
+  const jobLines = ['Crew: '+snap.crew+' people', 'Time on site: about '+r.timeOnSite.toFixed(1)+' hr',
+    r.yd ? 'Volume: about '+(Math.round(r.yd*10)/10)+' cubic yards' : null, 'Trailer: 7x14 dump trailer'].filter(Boolean);
+  jobLines.forEach((t,i) => doc.text(t, 340, y+17+i*14));
+  y = Math.max(y+33+custLines.length*14, y+17+jobLines.length*14) + 18;
+  doc.setFillColor(...mist); doc.rect(M, y, W-2*M, 24, 'F');
+  doc.setTextColor(...ink); doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+  doc.text('DESCRIPTION', M+10, y+16); doc.text('AMOUNT', W-M-10, y+16, {align:'right'});
+  y += 24;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setDrawColor(...line); doc.setLineWidth(0.75);
+  r.lines.forEach(l => {
+    const wrapped = doc.splitTextToSize(String(l[0]), 360);
+    doc.text(wrapped, M+10, y+16); doc.text(money(l[1]), W-M-10, y+16, {align:'right'});
+    y += 12 + wrapped.length*13; doc.line(M, y, W-M, y);
+  });
+  if(r.isRange){
+    doc.setTextColor(...soft);
+    doc.text('Range covers up to the next load size', M+10, y+16); doc.text('+'+money(r.high-r.price), W-M-10, y+16, {align:'right'});
+    y += 25; doc.line(M, y, W-M, y); doc.setTextColor(...ink);
+  }
+  y += 14;
+  doc.setFillColor(...green); doc.roundedRect(W-M-230, y, 230, 58, 8, 8, 'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+  doc.text(r.isRange ? 'ESTIMATE' : 'TOTAL', W-M-216, y+20);
+  doc.setFontSize(r.isRange ? 19 : 24);
+  doc.text(r.isRange ? money(r.price)+' - '+money(r.high) : money(r.price), W-M-14, y+44, {align:'right'});
+  doc.setTextColor(...ink); doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  const terms = doc.splitTextToSize(r.isRange
+    ? 'This is an estimate from photos. We confirm one flat price on site before we lift anything, and you approve it first.'
+    : 'Flat, all-in price. Includes labor, loading, hauling, disposal and sweep-up. No hourly meter and no surprise fees.', 230);
+  doc.text(terms, M, y+14);
+  y += Math.max(58, terms.length*13) + 22;
+  const photos = (snap.photos || []).slice(0,4);
+  if(photos.length){
+    if(y + 150 > H - 110){ doc.addPage(); y = 60; }
+    doc.setTextColor(...soft); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+    doc.text('JOB PHOTOS', M, y); y += 10;
+    const cellW = (W - 2*M - 30)/4, cellH = 108;
+    photos.forEach((p,i) => {
+      const x = M + i*(cellW+10);
+      const s = Math.min(cellW/p.w, cellH/p.h), w = p.w*s, h = p.h*s;
+      doc.setFillColor(...mist); doc.rect(x, y, cellW, cellH, 'F');
+      try { doc.addImage(p.dataUrl, 'JPEG', x+(cellW-w)/2, y+(cellH-h)/2, w, h); } catch(e){}
+    });
+    y += cellH + 22;
+  }
+  if(y > H - 110){ doc.addPage(); }
+  const fy = H - 92;
+  doc.setDrawColor(...line); doc.setLineWidth(0.75); doc.line(M, fy, W-M, fy);
+  doc.setTextColor(...soft); doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+  doc.text(doc.splitTextToSize('We don\'t take hot tubs or spas, pianos or organs, paint or chemicals, gasoline, oil or fuel, propane tanks, asbestos, or medical or biohazard waste.', W-2*M), M, fy+16);
+  doc.text('Quote valid for 14 days. Questions or to book: '+BIZ.phone+'  |  '+BIZ.email, M, fy+44);
+  doc.setTextColor(...green); doc.setFont('helvetica','bold');
+  doc.text('Thank you for choosing Express Removal.', M, fy+60);
+  return doc.output('blob');
 }
-function saveQuote(){
-  const r=compute(); if(!r.hasWork)return;
-  const q={t:Date.now(),name:document.getElementById('custName').value||'(no name)',area:document.getElementById('area').value,price:r.price};
-  try{const arr=JSON.parse(localStorage.getItem('exq')||'[]');arr.unshift(q);localStorage.setItem('exq',JSON.stringify(arr.slice(0,12)));renderSaved();
-    const b=event.target;b.textContent='Saved!';setTimeout(()=>b.textContent='Save',1200);
-  }catch(e){alert('Saved quotes need browser storage, which is off here. Use Copy or Print instead.');}
+function pdfName(number, name){ return 'Express-Removal-' + number + (name ? '-' + name.replace(/[^A-Za-z0-9]+/g,'-').slice(0,30) : '') + '.pdf'; }
+const canShareFiles = (() => { try { return !!(navigator.canShare && navigator.canShare({files:[new File(['x'], 't.pdf', {type:'application/pdf'})]})); } catch(e){ return false; } })();
+function clearPdf(){ lastPdf = null; $('sendPdfBtn').hidden = true; $('savePdfBtn').hidden = true; $('pdfBtn').hidden = false; }
+function saveBlob(blob, name){
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
-function renderSaved(){
-  try{const arr=JSON.parse(localStorage.getItem('exq')||'[]');
-    if(!arr.length)return;
-    document.getElementById('savedWrap').classList.remove('hide');
-    document.getElementById('savedList').innerHTML=arr.map(q=>
-      `<div class="qline"><span>${q.name} - ${q.area}</span><b>$${q.price}</b></div>`).join('');
+async function shareFile(blob, name, title){
+  const file = new File([blob], name, {type: blob.type || 'application/octet-stream'});
+  try { await navigator.share({files:[file], title}); return true; }
+  catch(e){ if(e && e.name === 'AbortError') return true; return false; }
+}
+$('pdfBtn').onclick = () => {
+  if(!window.jspdf){ note('The PDF tool didn\'t load. Connect to the internet once and reopen the app.', true); return; }
+  ensureNumber();
+  const snap = {r: compute(), c: custInfo(), crew: S.crew, number: S.number, createdAt: S.createdAt, photos: S.photos.filter(p => p.dataUrl)};
+  try{
+    const blob = buildPdf(snap);
+    lastPdf = {blob, name: pdfName(snap.number, snap.c.name)};
+    $('pdfBtn').hidden = true;
+    $('sendPdfBtn').hidden = !canShareFiles; $('savePdfBtn').hidden = false;
+    $('savePdfBtn').classList.toggle('btn-full', !canShareFiles);
+    calcNum();
+    note(canShareFiles ? 'PDF ready. Tap Send PDF to text or email it to the customer.' : 'PDF ready. Tap Save PDF.');
+  }catch(e){ note('The PDF couldn\'t be built. Try again.', true); }
+};
+$('sendPdfBtn').onclick = async () => {
+  if(!lastPdf) return;
+  const ok = await shareFile(lastPdf.blob, lastPdf.name, 'Express Removal quote');
+  if(!ok){ saveBlob(lastPdf.blob, lastPdf.name); note('Sharing isn\'t available, so the PDF was saved instead.'); }
+};
+$('savePdfBtn').onclick = () => { if(lastPdf){ saveBlob(lastPdf.blob, lastPdf.name); note('PDF saved: '+lastPdf.name); } };
+
+/* ---------------- saving: phone first, then the shared sheet ---------------- */
+function stateForSave(){
+  return {mode:S.mode, load:S.load, aiHigh:S.aiHigh, items:S.items, special:S.special, stairs:S.stairs, disassembly:S.disassembly,
+    flags:S.flags, crew:S.crew, qmode:S.qmode,
+    heavyMat:$('heavyMat').value, heavyTons:$('heavyTons').value, laborRate:$('laborRate').value, fuel:$('fuel').value};
+}
+const linesText = l => Array.isArray(l) ? l.map(x => x.label + ' ' + money(x.amount)).join('; ') : String(l || '');
+function buildRecord(){
+  const r = compute(), c = custInfo();
+  return {
+    id: S.id || S.number, number:S.number, createdAt:S.createdAt, updatedAt:new Date().toISOString(),
+    customer:c.name, phone:c.phone, address:c.addr, area:c.area,
+    price:r.price, high:r.isRange ? r.high : r.price, isRange:r.isRange,
+    lines: r.lines.map(l => l[0] + ' ' + money(l[1])).join('; '),
+    crew:S.crew, hours:Math.round(r.timeOnSite*10)/10, yards:Math.round(r.yd*10)/10,
+    status:S.status || 'Quoted', aiSummary:S.aiSummary || '',
+    photos:S.photos.map(p => ({dataUrl:p.dataUrl || null, w:p.w || 0, h:p.h || 0, id:p.id || null})),
+    state:stateForSave()
+  };
+}
+const inflight = new Set();
+async function uploadLocal(rec){
+  if(inflight.has(rec.id)) return false;
+  inflight.add(rec.id);
+  let again = false;
+  try{
+    const photos = (rec.photos || []).filter(p => p.id || p.dataUrl);
+    const quote = Object.assign({}, rec); delete quote.photos;
+    quote.lines = linesText(quote.lines);
+    const j = await api('save', {quote, photos: photos.map(p => p.id ? {id:p.id} : {data:p.dataUrl.split(',')[1]})}, {timeout:120000});
+    const ids = j.photoIds || [];
+    photos.forEach((p, i) => { if(!p.id && ids[i] && S.id === rec.id){ const m = S.photos.find(x => !x.id && x.dataUrl === p.dataUrl); if(m) m.id = ids[i]; } });
+    if(S.id === rec.id && /No signal|upload failed|Uploading/.test($('panelNote').textContent)) note('Uploaded to the shared list as '+rec.number+'.');
+    const cur = await DB.get(rec.id);
+    if(cur && cur.updatedAt === rec.updatedAt) await DB.del(rec.id);
+    else if(cur) again = true;
+    return true;
+  } finally {
+    inflight.delete(rec.id);
+    if(again) setTimeout(syncPending, 300);
+  }
+}
+let syncing = false;
+async function syncPending(){
+  if(syncing || !connected()) return;
+  syncing = true;
+  try{
+    const all = await DB.all();
+    for(const rec of all){
+      try { await uploadLocal(rec); }
+      catch(e){ if(e && ['offline','timeout','bad_pin','bad_response','no_server','not_setup'].includes(e.code)) break; }
+    }
   }catch(e){}
+  finally{ syncing = false; }
+  await refreshList();
+}
+async function saveQuote(){
+  ensureNumber();
+  const rec = buildRecord();
+  await DB.put(rec);
+  S.id = rec.id; calcNum();
+  if(!connected()) return {where:'phone'};
+  try { const ok = await uploadLocal(rec); return {where: ok ? 'shared' : 'pending'}; }
+  catch(e){ return {where:'pending', err:e}; }
+}
+$('saveBtn').onclick = async () => {
+  const btn = $('saveBtn'); btn.disabled = true; btn.textContent = 'Saving...';
+  try{
+    const res = await saveQuote();
+    if(res.where === 'shared') note('Saved to the shared list as '+S.number+'.');
+    else if(res.where === 'phone') note('Saved on this phone as '+S.number+'. Connect the crew server in Settings to share it.');
+    else if(res.err && ['offline','timeout'].includes(res.err.code)) note('No signal. Saved on this phone. It uploads by itself when you\'re back online.');
+    else if(res.err) note('Saved on this phone, but the upload failed: '+errMsg(res.err), true);
+    else note('Saved. Uploading...');
+  }catch(e){
+    note(e && e.name === 'QuotaExceededError' ? 'This phone is out of space. Connect to the server so saved quotes can upload and clear.' : 'The quote didn\'t save. Try again.', true);
+  }finally{ btn.textContent = 'Save quote'; btn.disabled = !compute().hasWork; refreshList(); }
+};
+$('schedBtn').onclick = async () => {
+  const btn = $('schedBtn'); btn.disabled = true; const label = btn.textContent; btn.textContent = 'Saving first...';
+  try{
+    const res = await saveQuote();
+    if(res.where !== 'shared'){ note(res.err ? 'Couldn\'t reach the server to schedule: '+errMsg(res.err) : 'Couldn\'t reach the server to schedule. Try again.', true); return; }
+    await refreshList();
+    const row = allRows().find(r => r.id === S.id);
+    openSchedule(row || {id:S.id, number:S.number, customer:custInfo().name});
+  }catch(e){ note('The quote didn\'t save. Try again.', true); }
+  finally{ btn.textContent = label; btn.disabled = !compute().hasWork; calcNum(); }
+};
+function resetAll(){
+  S = blankState(); aiUndo = null;
+  ['custName','custPhone','custAddr','aiNotes'].forEach(id => $(id).value = '');
+  $('heavyMat').value = 'none'; $('heavyTons').value = 0; $('laborRate').value = 20; $('fuel').value = 25; $('area').selectedIndex = 0;
+  $('aiResult').innerHTML = ''; $('aiUndo').hidden = true;
+  renderThumbs(); syncControls(); calc(); note('');
+}
+$('newBtn').onclick = () => { resetAll(); window.scrollTo(0,0); };
+
+/* ---------------- opening a quote ---------------- */
+function openRow(row){
+  resetAll();
+  const st = row.state || {};
+  Object.assign(S, {mode:st.mode||'load', load:st.load||null, aiHigh:st.aiHigh||null, items:st.items||{}, special:st.special||{}, stairs:st.stairs||0,
+    disassembly:st.disassembly||0, flags:Object.assign({longCarry:false,sameDay:false,storm:false}, st.flags||{}),
+    crew:st.crew||2, qmode:st.qmode||'range', id:row.id, number:row.number, createdAt:row.createdAt, status:row.status||'Quoted',
+    aiSummary:row.aiSummary||'', job: row.jobDate ? {date:row.jobDate, time:row.jobTime, crew:row.jobCrew, notes:row.jobNotes} : null});
+  S.photos = row.local ? (row.photos||[]).map(p => Object.assign({}, p)) : (row.photoIds||[]).map(id => ({id, dataUrl:null, w:0, h:0}));
+  $('heavyMat').value = st.heavyMat || 'none'; $('heavyTons').value = st.heavyTons || 0;
+  $('laborRate').value = st.laborRate || 20; $('fuel').value = st.fuel || 25;
+  $('custName').value = row.customer || ''; $('custPhone').value = row.phone || ''; $('custAddr').value = row.address || '';
+  if(row.area) $('area').value = row.area;
+  renderThumbs(); syncControls(); calc();
+  if(row.aiSummary) setAiStatus('Earlier estimate: '+row.aiSummary);
+  note('Opened '+row.number+'. Saving again updates it for everyone.');
+  showView('calc');
+  if(!row.local && S.photos.length) loadRemotePhotos(row.id, S.photos.map(p => p.id));
+}
+async function loadRemotePhotos(qid, ids){
+  try{
+    const j = await api('photos', {ids}, {timeout:90000});
+    if(S.id !== qid) return;
+    for(const p of (j.photos || [])){
+      const t = S.photos.find(x => x.id === p.id); if(!t) continue;
+      if(!p.data){ S.photos.splice(S.photos.indexOf(t), 1); continue; }
+      const dataUrl = 'data:image/jpeg;base64,' + p.data;
+      try { const img = await loadImg(dataUrl); t.dataUrl = dataUrl; t.w = img.naturalWidth; t.h = img.naturalHeight; } catch(e){}
+    }
+    renderThumbs();
+  }catch(e){ if(S.id === qid) note('The photos didn\'t load: '+errMsg(e)+' The quote itself is fine.', true); }
 }
 
-// init
-buildLoads();buildItems();buildCrew();buildSheet();renderSaved();calc();
+/* ---------------- the shared list ---------------- */
+let serverRows = (() => { try { return JSON.parse(localStorage.getItem('exq-list-cache') || '[]'); } catch(e){ return []; } })();
+let localRows = [], listErr = '', lastRefresh = 0, refreshing = null;
+let lastGood = (() => { try { return Number(localStorage.getItem('exq-list-time') || 0); } catch(e){ return 0; } })();
+function allRows(){
+  const localIds = new Set(localRows.map(r => r.id));
+  return localRows.map(r => Object.assign({}, r, {local:true}))
+    .concat(serverRows.filter(r => !localIds.has(r.id)))
+    .sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+}
+function refreshList(){
+  if(refreshing) return refreshing;
+  refreshing = (async () => {
+    try { localRows = await DB.all(); } catch(e){ localRows = []; }
+    if(connected()){
+      try{
+        const j = await api('list', {});
+        serverRows = j.quotes || []; listErr = ''; lastGood = Date.now();
+        CFG.sheetUrl = j.sheetUrl || CFG.sheetUrl; CFG.aiReady = j.aiReady; saveCfg();
+        try { localStorage.setItem('exq-list-cache', JSON.stringify(serverRows)); localStorage.setItem('exq-list-time', String(lastGood)); } catch(e){}
+      }catch(e){ listErr = errMsg(e); }
+    } else listErr = '';
+    lastRefresh = Date.now();
+    renderList(); renderJobs(); updateAiButton(); calc();
+  })().finally(() => { refreshing = null; });
+  return refreshing;
+}
+$('refreshBtn').onclick = () => { lastRefresh = 0; syncPending().then(refreshList); };
+$('jobsRefresh').onclick = () => { lastRefresh = 0; refreshList(); };
+
+let listFilter = 'All', confirmDelete = null;
+$('listFilters').innerHTML = ['All', ...STATUSES].map(s => `<button type="button" class="chip${s==='All'?' on':''}" data-filter="${s}">${s}</button>`).join('');
+$('listFilters').addEventListener('click', e => { const b = e.target.closest('[data-filter]'); if(!b) return; listFilter = b.dataset.filter;
+  document.querySelectorAll('[data-filter]').forEach(x => x.classList.toggle('on', x === b)); renderList(); });
+$('listSearch').addEventListener('input', () => renderList());
+
+function amountText(r){ return r.isRange ? money(r.price)+' - '+money(r.high) : money(r.price); }
+function renderList(){
+  const rows = allRows();
+  const pending = rows.filter(r => r.local).length;
+  let banner = '';
+  if(listErr) banner += `<div class="banner err"><span>${esc(listErr)}${serverRows.length ? ' Showing the last copy this phone saw.' : ''}</span></div>`;
+  if(pending) banner += connected()
+    ? `<div class="banner"><span>${pending} quote${pending>1?'s':''} saved on this phone ${pending>1?'haven\'t':'hasn\'t'} uploaded yet.</span><button type="button" class="smallbtn go" id="uploadNow">Upload now</button></div>`
+    : `<div class="banner"><span>Quotes are saved on this phone only. Connect the crew server in Settings to share them.</span></div>`;
+  $('listBanner').innerHTML = banner;
+  const up = $('uploadNow'); if(up) up.onclick = () => { up.disabled = true; up.textContent = 'Uploading...'; syncPending(); };
+  const q = $('listSearch').value.trim().toLowerCase();
+  const shown = rows.filter(r => (listFilter === 'All' || (r.status||'Quoted') === listFilter) &&
+    (!q || [r.customer, r.phone, r.address, r.number, r.area].some(v => String(v||'').toLowerCase().includes(q))));
+  $('tab-list').setAttribute('aria-label', 'Quotes, '+rows.length);
+  const box = $('savedList');
+  if(!rows.length){ box.innerHTML = '<p class="empty">No quotes yet. Build one on the Quote tab and tap Save quote.</p>'; }
+  else if(!shown.length){ box.innerHTML = '<p class="empty">Nothing matches.</p>'; }
+  else box.innerHTML = shown.map(r => {
+    const when = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+    const np = r.local ? (r.photos||[]).length : (r.photoIds||[]).length;
+    const st = r.status || 'Quoted';
+    const job = st === 'Booked' && r.jobDate ? ' · '+dayLabel(r.jobDate)+' '+windowLabel(r.jobTime) : '';
+    return `<div class="srow">
+      <div class="stop"><span class="who">${esc(r.customer || 'No name')}${r.local ? '<span class="tag local">On this phone</span>' : `<span class="tag s-${esc(st)}">${esc(st)}</span>`}</span><span class="amt">${amountText(r)}</span></div>
+      <div class="ssub">${esc(r.number||'')} · ${esc(r.area||'')} · ${when}${np ? ' · '+np+' photo'+(np>1?'s':'') : ''}${r.by ? ' · by '+esc(r.by) : ''}${esc(job)}</div>
+      <div class="sact">
+        ${r.local ? '' : `<select data-status="${esc(r.id)}" aria-label="Status for ${esc(r.number||'')}">${STATUSES.map(s => `<option${s===st?' selected':''}>${s}</option>`).join('')}</select>`}
+        <button type="button" data-open="${esc(r.id)}">Open</button>
+        ${r.local ? '' : `<button type="button" data-sched="${esc(r.id)}">${r.jobDate ? 'Reschedule' : 'Schedule'}</button>`}
+        <button type="button" class="danger" data-del="${esc(r.id)}">${confirmDelete===r.id ? 'Tap again to delete' : 'Delete'}</button>
+      </div>
+    </div>`;
+  }).join('');
+  $('listSynced').textContent = connected() && lastGood ? 'Last updated '+new Date(lastGood).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+}
+function findRow(id){ return allRows().find(x => x.id === id); }
+$('savedList').addEventListener('click', async e => {
+  const o = e.target.closest('[data-open]'), d = e.target.closest('[data-del]'), s = e.target.closest('[data-sched]');
+  if(o){ const r = findRow(o.dataset.open); if(r) openRow(r); return; }
+  if(s){ const r = findRow(s.dataset.sched); if(r) openSchedule(r); return; }
+  if(d){
+    const id = d.dataset.del, r = findRow(id); if(!r) return;
+    if(confirmDelete !== id){ confirmDelete = id; renderList(); setTimeout(() => { if(confirmDelete===id){ confirmDelete=null; renderList(); } }, 4000); return; }
+    confirmDelete = null; d.disabled = true; d.textContent = 'Deleting...';
+    try{
+      if(r.local) await DB.del(id);
+      if(!r.local || serverRows.some(x => x.id === id)){ await api('delete', {id}); serverRows = serverRows.filter(x => x.id !== id); }
+      if(S.id === id){ S.id = null; S.status = 'Quoted'; S.job = null; S.photos.forEach(p => p.id = null); calcNum(); }
+    }catch(err){ alertList(errMsg(err)); }
+    refreshList();
+  }
+});
+$('savedList').addEventListener('change', async e => {
+  const s = e.target.closest('[data-status]'); if(!s) return;
+  const row = serverRows.find(x => x.id === s.dataset.status); if(!row) return;
+  const prev = row.status; row.status = s.value; s.disabled = true;
+  try { await api('status', {id:row.id, status:s.value}); if(S.id===row.id){ S.status = s.value; calcNum(); } }
+  catch(err){ row.status = prev; alertList(errMsg(err)); }
+  refreshList();
+});
+function alertList(msg){ listErr = msg; renderList(); }
+
+/* ---------------- jobs ---------------- */
+function mapsLink(r){ const q = [r.address, r.area, 'NC'].filter(Boolean).join(', '); return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q); }
+function jobCard(r, kind){
+  const tel = String(r.phone||'').replace(/[^0-9+]/g, '');
+  return `<div class="job ${kind}">
+    ${r.jobDate ? `<div class="jtime">${esc(windowLabel(r.jobTime) || 'Time not set')}</div>` : ''}
+    <div class="stop"><span class="who">${esc(r.customer || 'No name')}</span><span class="amt">${amountText(r)}</span></div>
+    <div class="ssub">${esc([r.address, r.area].filter(Boolean).join(', ') || 'No address')} · ${esc(r.number)}${r.jobCrew ? ' · crew: '+esc(r.jobCrew) : ''}</div>
+    ${r.jobNotes ? `<div class="jnotes">${esc(r.jobNotes)}</div>` : ''}
+    <div class="sact">
+      ${r.address ? `<a class="smallbtn" href="${mapsLink(r)}" target="_blank" rel="noopener">Directions</a>` : ''}
+      ${tel ? `<a class="smallbtn" href="tel:${esc(tel)}">Call</a>` : ''}
+      ${kind === 'done' ? '' : `<button type="button" class="smallbtn go" data-jdone="${esc(r.id)}">Mark done</button>`}
+      <button type="button" class="smallbtn" data-sched="${esc(r.id)}">${r.jobDate ? 'Reschedule' : 'Schedule'}</button>
+      <button type="button" class="smallbtn" data-open="${esc(r.id)}">Open</button>
+    </div>
+  </div>`;
+}
+function renderJobs(){
+  const today = ymd(new Date()), weekAgo = ymd(addDays(new Date(), -7));
+  const rows = serverRows.filter(r => r.status === 'Booked' || (r.status === 'Done' && r.jobDate && r.jobDate >= weekAgo));
+  const booked = rows.filter(r => r.status === 'Booked');
+  const noDate = booked.filter(r => !r.jobDate);
+  const past = booked.filter(r => r.jobDate && r.jobDate < today).sort((a,b) => a.jobDate.localeCompare(b.jobDate));
+  const upcoming = booked.filter(r => r.jobDate && r.jobDate >= today).sort((a,b) => (a.jobDate+a.jobTime).localeCompare(b.jobDate+b.jobTime));
+  const done = rows.filter(r => r.status === 'Done').sort((a,b) => b.jobDate.localeCompare(a.jobDate));
+  const todayCount = upcoming.filter(r => r.jobDate === today).length;
+  $('jobsCount').hidden = !todayCount; $('jobsCount').textContent = todayCount;
+  $('jobsBanner').innerHTML = !connected() ? '<div class="banner"><span>Jobs are shared through the crew server. Connect it in Settings.</span></div>'
+    : listErr ? `<div class="banner err"><span>${esc(listErr)}${serverRows.length ? ' Showing the last copy this phone saw.' : ''}</span></div>` : '';
+  let html = '';
+  if(past.length) html += `<div class="jgroup past"><h4>Past, not marked done</h4>${past.map(r => jobCard(r,'')).join('')}</div>`;
+  const byDay = {};
+  upcoming.forEach(r => (byDay[r.jobDate] = byDay[r.jobDate] || []).push(r));
+  Object.keys(byDay).forEach(d => { html += `<div class="jgroup"><h4>${esc(dayLabel(d))}</h4>${byDay[d].map(r => jobCard(r,'')).join('')}</div>`; });
+  if(noDate.length) html += `<div class="jgroup"><h4>Booked, needs a day</h4>${noDate.map(r => jobCard(r,'nodate')).join('')}</div>`;
+  if(done.length) html += `<div class="jgroup"><h4>Done this week</h4>${done.map(r => jobCard(r,'done')).join('')}</div>`;
+  $('jobsList').innerHTML = html || (connected() ? '<p class="empty">No booked jobs. Open a quote and tap Schedule job, or set a quote to Booked.</p>' : '');
+}
+$('jobsList').addEventListener('click', async e => {
+  const o = e.target.closest('[data-open]'), s = e.target.closest('[data-sched]'), d = e.target.closest('[data-jdone]');
+  if(o){ const r = findRow(o.dataset.open); if(r) openRow(r); return; }
+  if(s){ const r = findRow(s.dataset.sched); if(r) openSchedule(r); return; }
+  if(d){
+    d.disabled = true; d.textContent = 'Saving...';
+    try { await api('status', {id:d.dataset.jdone, status:'Done'}); }
+    catch(err){ listErr = errMsg(err); }
+    refreshList();
+  }
+});
+
+/* ---------------- schedule dialog ---------------- */
+let schedRow = null, schedReturn = null;
+function openSchedule(row){
+  if(!connected()){ note(ERR.no_server, true); return; }
+  schedRow = row; schedReturn = document.activeElement;
+  $('schedTitle').textContent = row.jobDate ? 'Reschedule job' : 'Schedule job';
+  $('schedWho').textContent = [row.customer || 'No name', row.number, row.address].filter(Boolean).join(' · ');
+  $('jobDate').value = row.jobDate || ymd(addDays(new Date(), 1));
+  $('jobDate').min = ymd(addDays(new Date(), -30));
+  $('jobTime').value = row.jobTime && [...$('jobTime').options].some(o => o.value === row.jobTime) ? row.jobTime : '08:00-10:00';
+  $('jobCrew').value = row.jobCrew || CFG.name || '';
+  $('jobNotes').value = row.jobNotes || '';
+  $('schedStatus').textContent = ''; $('schedStatus').classList.remove('err');
+  $('schedSave').disabled = false; $('schedSave').textContent = 'Book it';
+  $('schedDlg').hidden = false;
+  setTimeout(() => $('jobDate').focus(), 50);
+}
+function closeSchedule(){ $('schedDlg').hidden = true; schedRow = null; if(schedReturn && schedReturn.focus) schedReturn.focus(); }
+$('schedCancel').onclick = closeSchedule;
+$('schedDlg').addEventListener('click', e => { if(e.target === $('schedDlg')) closeSchedule(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('schedDlg').hidden) closeSchedule(); });
+$('schedSave').onclick = async () => {
+  if(!schedRow) return;
+  const jobDate = $('jobDate').value;
+  const st = $('schedStatus');
+  if(!jobDate){ st.textContent = 'Pick a day.'; st.classList.add('err'); return; }
+  const btn = $('schedSave'); btn.disabled = true; btn.textContent = 'Booking...'; st.textContent = ''; st.classList.remove('err');
+  const job = {id:schedRow.id, jobDate, jobTime:$('jobTime').value, jobCrew:$('jobCrew').value.trim(), jobNotes:$('jobNotes').value.trim()};
+  try{
+    if(schedRow.local){ const rec = await DB.get(schedRow.id); if(rec) await uploadLocal(rec); }
+    await api('schedule', job);
+    if(S.id === job.id){ S.status = 'Booked'; S.job = {date:job.jobDate, time:job.jobTime, crew:job.jobCrew, notes:job.jobNotes}; calcNum(); note('Booked for '+dayLabel(jobDate)+', '+windowLabel(job.jobTime)+'.'); }
+    closeSchedule();
+    await refreshList();
+  }catch(e){
+    st.textContent = errMsg(e); st.classList.add('err');
+    btn.disabled = false; btn.textContent = 'Book it';
+  }
+};
+
+/* ---------------- spreadsheet export ---------------- */
+function csvCell(v){ const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+$('exportBtn').onclick = async () => {
+  const rows = allRows(); if(!rows.length) return;
+  const head = ['Quote #','Date','Status','Customer','Phone','Address','Area','Type','Low','High','Crew','Hours on site','Cubic yards','Job date','Job time','Line items','Made by'];
+  const data = rows.map(r => [r.number, r.createdAt ? String(r.createdAt).slice(0,10) : '', r.status||'Quoted', r.customer, r.phone, r.address, r.area,
+    r.isRange ? 'Estimate' : 'Firm quote', r.price, r.high, r.crew, r.hours, r.yards, r.jobDate||'', r.jobTime||'', linesText(r.lines), r.by||'']);
+  const csv = [head, ...data].map(row => row.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const name = 'Express-Removal-quotes-' + ymd(new Date()) + '.csv';
+  if(canShareFiles){ const ok = await shareFile(blob, name, 'Express Removal quotes'); if(ok) return; }
+  saveBlob(blob, name);
+};
+
+/* ---------------- settings / connect ---------------- */
+function renderSettings(){
+  const gate = document.body.classList.contains('gate');
+  $('setTitle').textContent = gate ? 'Connect to the crew server' : 'Settings';
+  $('setIntro').textContent = gate
+    ? 'Enter the crew PIN once on this phone. Quotes, photos and jobs are then shared with everyone on the crew.'
+    : 'This phone\'s connection to the crew server.';
+  const on = connected();
+  $('connState').classList.toggle('on', on);
+  $('connState').querySelector('span').textContent = on ? 'Connected'+(CFG.name ? ' as '+CFG.name : '') : (serverUrl() ? 'Not connected. Enter the crew PIN.' : 'Not connected');
+  $('urlWrap').hidden = !!SERVER_URL;
+  $('cfgUrl').value = CFG.url || '';
+  $('cfgPin').value = CFG.pin || '';
+  $('cfgName').value = CFG.name || '';
+  $('connectBtn').textContent = on ? 'Save' : 'Connect';
+  $('skipBtn').hidden = !gate;
+  $('setMore').hidden = gate || !on;
+  $('sheetLink').hidden = !CFG.sheetUrl; if(CFG.sheetUrl) $('sheetLink').href = CFG.sheetUrl;
+}
+$('connectBtn').onclick = async () => {
+  const st = $('setStatus'), btn = $('connectBtn');
+  const url = SERVER_URL ? '' : $('cfgUrl').value.trim();
+  const pin = $('cfgPin').value.trim(), name = $('cfgName').value.trim();
+  st.classList.remove('err');
+  if(!SERVER_URL && !/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\/?$/.test(url)){
+    st.textContent = 'Paste the full web app link. It starts with https://script.google.com/macros/s/ and ends in /exec.'; st.classList.add('err'); return;
+  }
+  if(!pin){ st.textContent = 'Enter the crew PIN.'; st.classList.add('err'); return; }
+  const before = {url:CFG.url, pin:CFG.pin, name:CFG.name};
+  Object.assign(CFG, {url, pin, name});
+  btn.disabled = true; st.textContent = 'Checking...';
+  try{
+    const j = await api('ping', {}, {timeout:30000});
+    CFG.skipped = false; CFG.sheetUrl = j.sheetUrl || ''; CFG.aiReady = !!j.aiReady; saveCfg();
+    st.textContent = 'Connected.' + (j.aiReady ? '' : ' Photo estimates are off until the Claude API key is added on the server.');
+    const wasGate = document.body.classList.contains('gate');
+    document.body.classList.remove('gate');
+    renderSettings(); calc(); updateAiButton();
+    syncPending();
+    if(wasGate) showView('calc');
+  }catch(e){
+    if(!(e && e.code === 'bad_pin')) Object.assign(CFG, before);
+    saveCfg(); renderSettings();
+    st.textContent = errMsg(e); st.classList.add('err');
+  }finally{ btn.disabled = false; }
+};
+$('skipBtn').onclick = () => { CFG.skipped = true; saveCfg(); document.body.classList.remove('gate'); renderSettings(); showView('calc'); };
+$('disconnectBtn').onclick = () => {
+  CFG.pin = ''; CFG.skipped = true; saveCfg();
+  serverRows = []; try { localStorage.removeItem('exq-list-cache'); } catch(e){}
+  renderSettings(); refreshList(); calc(); $('setStatus').textContent = 'Disconnected. This phone won\'t see shared quotes until you connect again.';
+};
+
+/* ---------------- install tip + offline ---------------- */
+(function(){
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  let hidden = false; try { hidden = localStorage.getItem('exq-hide-install') === '1'; } catch(e){}
+  if(standalone || hidden) return;
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  $('installText').textContent = ios
+    ? 'In Safari, tap the Share button, then Add to Home Screen. Then connect from the home screen app.'
+    : 'In Chrome, tap the three-dot menu, then Add to Home screen or Install app.';
+  $('installTip').hidden = false;
+  $('installClose').onclick = () => { $('installTip').hidden = true; try { localStorage.setItem('exq-hide-install','1'); } catch(e){} };
+})();
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+window.addEventListener('online', () => syncPending());
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && Date.now() - lastRefresh > 60000) syncPending(); });
+
+/* ---------------- start ---------------- */
+buildLoads(); buildSheet(); syncControls(); renderThumbs(); calc();
+if(!connected() && !CFG.skipped){ document.body.classList.add('gate'); renderSettings(); showView('settings'); }
+else { renderSettings(); showView('calc'); }
+refreshList().then(() => syncPending());
+})();
 </script>
 </body>
 </html>
